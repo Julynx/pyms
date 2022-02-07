@@ -13,10 +13,6 @@ from pynput import keyboard
 with contextlib.redirect_stdout(None):
     import pygame
 
-__author__ = "Julio Cabria (github.com/Julynx)"
-__license__ = "GNU GPL v2.0"
-__version__ = "1.0.1"
-
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 max_length = 44
 
@@ -156,7 +152,7 @@ def main():
         pygame.mixer.music.play()
     except pygame.error:
         print("Error: Could not load music file.")
-    sys.exit(1)
+        sys.exit(1)
 
     # Fancy interface magic
     i_lines = [(strip_path_from_filename(m_file) + " ", True)] + i_lines
