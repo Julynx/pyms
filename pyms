@@ -1,0 +1,225 @@
+#!/usr/bin/env python3
+"""
+pyms: A simple terminal based music player.
+"""
+
+import os
+import sys
+import signal
+import random
+import contextlib
+from collections import defaultdict
+from pynput import keyboard
+with contextlib.redirect_stdout(None):
+    import pygame
+
+__author__ = "Julio Cabria (github.com/Julynx)"
+__license__ = "GNU GPL v2.0"
+__version__ = "1.0.1"
+
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+max_length = 44
+
+i_lines = [
+    ("  ┌─────┐  ┌─┐ ┌─┐             ┌─┐    ┌─┌───┐", False),
+    ("  │     │  │ │ │ │  ┌─────┐  ┌─┘ └─┐  └─│ ┌─┘", False),
+    ("  │     │  │ │ │ │  └─────┘  └─┐ ┌─┘  ┌─┘ │─┐", False),
+    ("  └─────┘  └─┘ └─┘             └─┘    └───┘─┘", False),
+    ("    esc     pause     F_8      F_9     pg_up ", False),
+]
+
+
+def redraw():
+    """
+    Clears the screen and redraws the ui.
+    """
+    os.system("clear")
+    print(boxer(i_lines))
+
+
+def resize_handler(signum, frame):
+    """
+    Executes whenever the size of the terminal is changed.
+    Calls redraw() in execution to update the screen.
+
+    Args:
+        signum (int): The signal number.
+        frame (frame): The frame.
+    """
+    redraw()
+
+
+def strip_path_from_filename(path):
+    """
+    Removes the path from the filename.
+
+    Args:
+        path (str): Full path to the file.
+
+    Returns:
+        str: The filename without the path.
+    """
+    if "/" in path:
+        filename = path.split("/")[-1]
+        return filename
+    return path
+
+
+def strip_filename_from_path(path):
+    """
+    Removes the filename from the path.
+
+    Args:
+        path (str): Full path to the file.
+
+    Returns:
+        str: The path without the filename.
+    """
+    if "/" in path:
+        new_path = path.split("/")[:-1]
+        new_path = "".join(new_path) + "/"
+        return new_path
+    return os.getcwd()
+
+
+def random_file(path):
+    """
+    Returns a random file from the given path.
+
+    Args:
+        path (str): The path to the directory to search.
+
+    Returns:
+        str: A random file from the given path.
+    """
+    files = os.listdir(path)
+    return os.path.join(path, files[random.randint(0, len(files)-1)])
+
+
+def boxer(lines):
+    """
+    Creates a box of the terminal size, enclosing the lines
+    passed in as a list of tuples.
+
+    Args:
+        lines (list): A list of tuples, each containing a line and a boolean.
+        The line is the text to be displayed, and the boolean is whether
+        the line should be centered.
+
+    Returns:
+        str: A string of the box with the lines fitted in.
+    """
+    string = ""
+    size = os.get_terminal_size()
+    width = size.columns
+
+    # Create the upper border
+    string += "┌"+"─"*(width-2)+"┐"+"\n"
+
+    # Create the box body
+    for tupl in lines:
+        line = tupl[0]
+        line_len = len(line)
+
+        if line_len > width - 5:
+            line = line[:width - 5] + "..."
+
+        if tupl[1]:
+            # Right justify the line
+            formatted_line = line.rjust(width-2)
+        else:
+            # Left justify the line
+            formatted_line = line.ljust(width-2)
+
+        string += "│"+formatted_line+"│" + "\n"
+
+    # Create the lower border
+    string += "└"+"─"*(width-2)+"┘"
+    return string
+
+
+def main():
+
+    global i_lines
+
+    # Check input arguments
+    if len(sys.argv) != 2:
+        print("Usage: pyms <file>")
+        exit(1)
+    m_file = sys.argv[1]
+    m_file_path = strip_filename_from_path(m_file)
+
+    # Initialize pygame mixer
+    pygame.init()
+    try:
+        pygame.mixer.music.load(sys.argv[1])
+        pygame.mixer.music.play()
+    except pygame.error:
+        print("Error: Could not load music file.")
+    sys.exit(1)
+
+    # Fancy interface magic
+    i_lines = [(strip_path_from_filename(m_file) + " ", True)] + i_lines
+    redraw()
+    signal.signal(signal.SIGWINCH, resize_handler)
+
+    # Main listener loop
+    press_or_release = defaultdict(lambda: 0)
+    try:
+        with keyboard.Events() as events:
+            for event in events:
+
+                # Clear user input
+                print(" "*16 + "\r", end="")
+
+                # Check only for key presses
+                press_or_release[event.key] += 1
+                if not press_or_release[event.key] % 2:
+                    continue
+
+                # If the ESC key is pressed, exit
+                if event.key == keyboard.Key.esc:
+                    pygame.mixer.music.stop()
+                    os.system("clear")
+                    sys.exit(0)
+
+                # If the PAUSE key is pressed, play/pause
+                elif event.key == keyboard.Key.pause:
+                    if press_or_release[event.key] % 2:
+                        if pygame.mixer.music.get_busy():
+                            pygame.mixer.music.pause()
+                        else:
+                            pygame.mixer.music.unpause()
+
+                # If the PAGE DOWN key is pressed, shuffle
+                elif event.key == keyboard.Key.page_down:
+                    if press_or_release[event.key] % 2:
+                        m_file = random_file(m_file_path)
+                        pygame.mixer.music.load(m_file)
+                        i_lines[0] = (
+                            strip_path_from_filename(m_file) + " ", True)
+                        redraw()
+                        pygame.mixer.music.play()
+
+                # If the F8 key is pressed, lower volume
+                elif event.key == keyboard.Key.f8:
+                    if press_or_release[event.key] % 2:
+                        curr_vol = pygame.mixer.music.get_volume()
+                        new_vol = round(round(curr_vol, 1), 8) - 0.10000000
+                        pygame.mixer.music.set_volume(new_vol)
+
+                # If the F9 key is pressed, raise volume
+                elif event.key == keyboard.Key.f9:
+                    if press_or_release[event.key] % 2:
+                        curr_vol = pygame.mixer.music.get_volume()
+                        new_vol = round(round(curr_vol, 1), 8) + 0.10000000
+                        pygame.mixer.music.set_volume(new_vol)
+
+    except KeyboardInterrupt:
+        pygame.mixer.music.stop()
+        os.system("clear")
+        sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()
