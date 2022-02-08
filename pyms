@@ -15,13 +15,14 @@ with contextlib.redirect_stdout(None):
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 max_length = 44
+center = False
 
 i_lines = [
-    ("  ┌─────┐  ┌─┐ ┌─┐             ┌─┐    ┌─┌───┐", False),
-    ("  │     │  │ │ │ │  ┌─────┐  ┌─┘ └─┐  └─│ ┌─┘", False),
-    ("  │     │  │ │ │ │  └─────┘  └─┐ ┌─┘  ┌─┘ │─┐", False),
-    ("  └─────┘  └─┘ └─┘             └─┘    └───┘─┘", False),
-    ("    esc     pause     F_8      F_9     pg_up ", False),
+    ("   ┌─────┐  ┌─┐ ┌─┐             ┌─┐    ┌─┌───┐", False),
+    ("   │     │  │ │ │ │  ┌─────┐  ┌─┘ └─┐  └─│ ┌─┘", False),
+    ("   │     │  │ │ │ │  └─────┘  └─┐ ┌─┘  ┌─┘ │─┐", False),
+    ("   └─────┘  └─┘ └─┘             └─┘    └───┘─┘", False),
+    ("     esc     pause     F_8      F_9     pg_up ", False),
 ]
 
 
@@ -108,6 +109,10 @@ def boxer(lines):
     string = ""
     size = os.get_terminal_size()
     width = size.columns
+    height = size.lines
+
+    if center:
+        print("\n" * int((height/2) - (len(lines)/2) -1), end="")
 
     # Create the upper border
     string += "┌"+"─"*(width-2)+"┐"+"\n"
