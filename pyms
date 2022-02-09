@@ -8,14 +8,14 @@ import sys
 import signal
 import random
 import contextlib
+import cursor
 from collections import defaultdict
 from pynput import keyboard
 with contextlib.redirect_stdout(None):
     import pygame
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-max_length = 44
-center = False
+center = True
 
 i_lines = [
     ("   ┌─────┐  ┌─┐ ┌─┐             ┌─┐    ┌─┌───┐", False),
@@ -110,32 +110,38 @@ def boxer(lines):
     size = os.get_terminal_size()
     width = size.columns
     height = size.lines
+    spacing = 4
+    terminator = "..."
 
     if center:
-        print("\n" * int((height/2) - (len(lines)/2) -1), end="")
+        print("\n" * int((height/2) - (len(lines)/2) - 1), end="")
 
     # Create the upper border
-    string += "┌"+"─"*(width-2)+"┐"+"\n"
+    pre_str = "┌"+"─"*(width-spacing)+"┐"
+    string += pre_str.center(width) +"\n"
 
     # Create the box body
     for tupl in lines:
         line = tupl[0]
         line_len = len(line)
 
-        if line_len > width - 5:
-            line = line[:width - 5] + "..."
+        if line_len > width - spacing - len(terminator):
+            line = line[:width - spacing - len(terminator)] + terminator
 
         if tupl[1]:
             # Right justify the line
-            formatted_line = line.rjust(width-2)
+            formatted_line = line.rjust(width-spacing)
         else:
             # Left justify the line
-            formatted_line = line.ljust(width-2)
+            formatted_line = line.ljust(width-spacing)
 
-        string += "│"+formatted_line+"│" + "\n"
+        pre_str = "│"+formatted_line+"│"
+
+        string += pre_str.center(width) + "\n"
 
     # Create the lower border
-    string += "└"+"─"*(width-2)+"┘"
+    pre_str = "└"+"─"*(width-spacing)+"┘"
+    string += pre_str.center(width)
     return string
 
 
@@ -160,6 +166,7 @@ def main():
         sys.exit(1)
 
     # Fancy interface magic
+    cursor.hide()
     i_lines = [(strip_path_from_filename(m_file) + " ", True)] + i_lines
     redraw()
     signal.signal(signal.SIGWINCH, resize_handler)
@@ -182,6 +189,7 @@ def main():
                 if event.key == keyboard.Key.esc:
                     pygame.mixer.music.stop()
                     os.system("clear")
+                    cursor.show()
                     sys.exit(0)
 
                 # If the PAUSE key is pressed, play/pause
@@ -219,7 +227,14 @@ def main():
     except KeyboardInterrupt:
         pygame.mixer.music.stop()
         os.system("clear")
+        cursor.show()
         sys.exit(0)
+
+    # Program exit
+    pygame.mixer.music.stop()
+    os.system("clear")
+    cursor.show()
+    sys.exit(0)
 
 
 if __name__ == "__main__":
