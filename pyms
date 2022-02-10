@@ -18,12 +18,16 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 center = True
 
 i_lines = [
-    ("   ┌─────┐  ┌─┐ ┌─┐             ┌─┐    ┌─┌───┐", False),
-    ("   │     │  │ │ │ │  ┌─────┐  ┌─┘ └─┐  └─│ ┌─┘", False),
-    ("   │     │  │ │ │ │  └─────┘  └─┐ ┌─┘  ┌─┘ │─┐", False),
-    ("   └─────┘  └─┘ └─┘             └─┘    └───┘─┘", False),
-    ("     esc     pause     F_8      F_9     pg_up ", False),
+    ("",True),
+    ("██████    ██  ██                ██      █ ████",True),
+    ("██████    ██  ██    ██████    ██████      ██  ",True),
+    ("██████    ██  ██                ██      ████ █",True),
+    ("",True),
+    ("escape    pause       F8        F9      pag_up",True)
 ]
+
+box_width = len(i_lines[1][0])
+
 
 
 def redraw():
@@ -106,42 +110,37 @@ def boxer(lines):
     Returns:
         str: A string of the box with the lines fitted in.
     """
+    global box_width
     string = ""
     size = os.get_terminal_size()
     width = size.columns
     height = size.lines
-    spacing = 4
-    terminator = "..."
+    term = "..."
 
     if center:
-        print("\n" * int((height/2) - (len(lines)/2) - 1), end="")
+        print("\n" * int((height/2) - (len(lines)/2)), end="")
 
-    # Create the upper border
-    pre_str = "┌"+"─"*(width-spacing)+"┐"
-    string += pre_str.center(width) +"\n"
-
-    # Create the box body
+    # Create the body
     for tupl in lines:
         line = tupl[0]
         line_len = len(line)
 
-        if line_len > width - spacing - len(terminator):
-            line = line[:width - spacing - len(terminator)] + terminator
-
         if tupl[1]:
-            # Right justify the line
-            formatted_line = line.rjust(width-spacing)
+            if line_len > min(box_width, width):
+                line = line[:min(box_width,width) - len(term)] + term
+
+            # Center the line
+            formatted_line = line.center(min(box_width, width))
         else:
+            if line_len > min(box_width, width):
+                line = line[:min(box_width,width) - len(term)] + term
             # Left justify the line
-            formatted_line = line.ljust(width-spacing)
+            formatted_line = line.ljust(min(box_width, width))
 
-        pre_str = "│"+formatted_line+"│"
+        # Center the line
+        formatted_line = formatted_line.center(width)
+        string += formatted_line + "\n"
 
-        string += pre_str.center(width) + "\n"
-
-    # Create the lower border
-    pre_str = "└"+"─"*(width-spacing)+"┘"
-    string += pre_str.center(width)
     return string
 
 
@@ -167,7 +166,7 @@ def main():
 
     # Fancy interface magic
     cursor.hide()
-    i_lines = [(strip_path_from_filename(m_file) + " ", True)] + i_lines
+    i_lines = [(strip_path_from_filename(m_file), False)] + i_lines
     redraw()
     signal.signal(signal.SIGWINCH, resize_handler)
 
@@ -203,12 +202,15 @@ def main():
                 # If the PAGE DOWN key is pressed, shuffle
                 elif event.key == keyboard.Key.page_down:
                     if press_or_release[event.key] % 2:
-                        m_file = random_file(m_file_path)
-                        pygame.mixer.music.load(m_file)
-                        i_lines[0] = (
-                            strip_path_from_filename(m_file) + " ", True)
-                        redraw()
-                        pygame.mixer.music.play()
+
+                        try:
+                            m_file = random_file(m_file_path)
+                            pygame.mixer.music.load(m_file)
+                            i_lines[0] = (strip_path_from_filename(m_file), False)
+                            redraw()
+                            pygame.mixer.music.play()
+                        except pygame.error:
+                            pass
 
                 # If the F8 key is pressed, lower volume
                 elif event.key == keyboard.Key.f8:
