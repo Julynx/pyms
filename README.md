@@ -15,10 +15,11 @@
 <br>
 
 ## Dependencies
-pyms uses [pygame](https://pypi.org/project/pygame/) & [pynput](https://pypi.org/project/pynput/), which can be installed by executing:
+pyms uses [pygame](https://pypi.org/project/pygame/), [pynput](https://pypi.org/project/pynput/) & [cursor](https://pypi.org/project/cursor/), which can be installed by executing:
 ```
 pip3 install pygame
 pip3 install pynput
+pip3 install cursor
 ```
 It has been tested with Python 3.8.10, results may vary if other versions are used.
 <br><br>
