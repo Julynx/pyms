@@ -2,15 +2,8 @@
 *Minimal command-line music player written in Python.*
 <br><br>
 
-<h4 align="center">Designed with elegance and minimalism.</h4>
 <p align="center">  
-  <img width="772" src="https://i.imgur.com/IdqmRCL.png">
-</p>
-<br>
-
-<h4 align="center">Resizes dynamically with your terminal.</h4>
-<p align="center">  
-  <img width="772" src="https://s10.gifyu.com/images/Resizing.gif">
+  <img width="772" src="https://i.imgur.com/QXOUWUP.png">
 </p>
 <br>
 
