@@ -76,11 +76,12 @@ def strip_filename_from_path(path):
     Returns:
         str: The path without the filename.
     """
-    if "/" in path:
-        new_path = path.split("/")[:-1]
-        new_path = "".join(new_path) + "/"
-        return new_path
-    return os.getcwd()
+    if "/" not in path:
+        return os.getcwd()
+    words = path.split("/")
+    words = words[:-1]
+    new_path = "/".join(words)
+    return new_path + "/"
 
 
 def random_file(path):
