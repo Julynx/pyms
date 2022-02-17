@@ -25,7 +25,7 @@ i_lines = [
     ("██████    ██  ██    ██████    ██████      ██  ", True),
     ("██████    ██  ██                ██      ████ █", True),
     ("", True),
-    ("escape    pause       F8        F9      pag_up", True)
+    ("escape    pause       F8        F9      pg_dwn", True)
 ]
 
 play1 = "██▄▄  "  # i_lines[2][0][10:16]
