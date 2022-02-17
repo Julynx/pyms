@@ -29,7 +29,6 @@ i_lines = [
 box_width = len(i_lines[1][0])
 
 
-
 def redraw():
     """
     Clears the screen and redraws the ui.
