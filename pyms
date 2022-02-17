@@ -26,6 +26,14 @@ i_lines = [
     ("escape    pause       F8        F9      pag_up",True)
 ]
 
+play1="██▄▄  " # i_lines[1][0][9:15]
+play2="██████" # i_lines[2][0][9:15]
+play3="██▀▀  " # i_lines[3][0][9:15]
+
+paus1="██  ██"
+paus2="██  ██"
+paus3="██  ██"
+
 box_width = len(i_lines[1][0])
 
 
