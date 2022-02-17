@@ -250,7 +250,6 @@ def main():
                         m_file = random_file(m_file)
                         pygame.mixer.music.load(m_file)
                         i_lines[0] = (strip_path_from_filename(m_file), False)
-                        redraw()
                         pygame.mixer.music.play()
                         pause_symbol()
                         redraw()
