@@ -199,38 +199,33 @@ def main():
 
                 # If the PAUSE key is pressed, play/pause
                 elif event.key == keyboard.Key.pause:
-                    if press_or_release[event.key] % 2:
-                        if pygame.mixer.music.get_busy():
-                            pygame.mixer.music.pause()
-                        else:
-                            pygame.mixer.music.unpause()
+                    if pygame.mixer.music.get_busy():
+                        pygame.mixer.music.pause()
+                    else:
+                        pygame.mixer.music.unpause()
 
                 # If the PAGE DOWN key is pressed, shuffle
                 elif event.key == keyboard.Key.page_down:
-                    if press_or_release[event.key] % 2:
-
-                        try:
-                            m_file = random_file(m_file)
-                            pygame.mixer.music.load(m_file)
-                            i_lines[0] = (strip_path_from_filename(m_file), False)
-                            redraw()
-                            pygame.mixer.music.play()
-                        except pygame.error:
-                            pass
+                    try:
+                        m_file = random_file(m_file)
+                        pygame.mixer.music.load(m_file)
+                        i_lines[0] = (strip_path_from_filename(m_file), False)
+                        redraw()
+                        pygame.mixer.music.play()
+                    except pygame.error:
+                        pass
 
                 # If the F8 key is pressed, lower volume
                 elif event.key == keyboard.Key.f8:
-                    if press_or_release[event.key] % 2:
-                        curr_vol = pygame.mixer.music.get_volume()
-                        new_vol = round(round(curr_vol, 1), 8) - 0.10000000
-                        pygame.mixer.music.set_volume(new_vol)
+                    curr_vol = pygame.mixer.music.get_volume()
+                    new_vol = round(round(curr_vol, 1), 8) - 0.10000000
+                    pygame.mixer.music.set_volume(new_vol)
 
                 # If the F9 key is pressed, raise volume
                 elif event.key == keyboard.Key.f9:
-                    if press_or_release[event.key] % 2:
-                        curr_vol = pygame.mixer.music.get_volume()
-                        new_vol = round(round(curr_vol, 1), 8) + 0.10000000
-                        pygame.mixer.music.set_volume(new_vol)
+                    curr_vol = pygame.mixer.music.get_volume()
+                    new_vol = round(round(curr_vol, 1), 8) + 0.10000000
+                    pygame.mixer.music.set_volume(new_vol)
 
     except KeyboardInterrupt:
         pygame.mixer.music.stop()
