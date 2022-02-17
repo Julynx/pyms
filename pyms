@@ -20,21 +20,21 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 center = True
 
 i_lines = [
-    ("",True),
-    ("██████    ██  ██                ██      █ ████",True),
-    ("██████    ██  ██    ██████    ██████      ██  ",True),
-    ("██████    ██  ██                ██      ████ █",True),
-    ("",True),
-    ("escape    pause       F8        F9      pag_up",True)
+    ("", True),
+    ("██████    ██  ██                ██      █ ████", True),
+    ("██████    ██  ██    ██████    ██████      ██  ", True),
+    ("██████    ██  ██                ██      ████ █", True),
+    ("", True),
+    ("escape    pause       F8        F9      pag_up", True)
 ]
 
-play1="██▄▄  " # i_lines[2][0][10:16]
-play2="██████" # i_lines[3][0][10:16]
-play3="██▀▀  " # i_lines[4][0][10:16]
+play1 = "██▄▄  "  # i_lines[2][0][10:16]
+play2 = "██████"  # i_lines[3][0][10:16]
+play3 = "██▀▀  "  # i_lines[4][0][10:16]
 
-paus1="██  ██"
-paus2="██  ██"
-paus3="██  ██"
+paus1 = "██  ██"
+paus2 = "██  ██"
+paus3 = "██  ██"
 
 box_width = len(i_lines[1][0])
 
@@ -170,13 +170,13 @@ def boxer(lines):
 
         if tupl[1]:
             if line_len > min(box_width, width):
-                line = line[:min(box_width,width) - len(term)] + term
+                line = line[:min(box_width, width) - len(term)] + term
 
             # Center the line
             formatted_line = line.center(min(box_width, width))
         else:
             if line_len > min(box_width, width):
-                line = line[:min(box_width,width) - len(term)] + term
+                line = line[:min(box_width, width) - len(term)] + term
             # Left justify the line
             formatted_line = line.ljust(min(box_width, width))
 
@@ -238,11 +238,10 @@ def main():
                     if pygame.mixer.music.get_busy():
                         pygame.mixer.music.pause()
                         play_symbol()
-                        redraw()
                     else:
                         pygame.mixer.music.unpause()
                         pause_symbol()
-                        redraw()
+                    redraw()
 
                 # If the PAGE DOWN key is pressed, shuffle
                 elif event.key == keyboard.Key.page_down:
