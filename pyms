@@ -4,11 +4,13 @@ pyms: A simple terminal based music player.
 """
 
 import os
+from re import T
 import sys
 import signal
 import random
 import contextlib
 import cursor
+import time
 from collections import defaultdict
 from pynput import keyboard
 with contextlib.redirect_stdout(None):
@@ -26,15 +28,41 @@ i_lines = [
     ("escape    pause       F8        F9      pag_up",True)
 ]
 
-play1="██▄▄  " # i_lines[1][0][9:15]
-play2="██████" # i_lines[2][0][9:15]
-play3="██▀▀  " # i_lines[3][0][9:15]
+play1="██▄▄  " # i_lines[2][0][10:16]
+play2="██████" # i_lines[3][0][10:16]
+play3="██▀▀  " # i_lines[4][0][10:16]
 
 paus1="██  ██"
 paus2="██  ██"
 paus3="██  ██"
 
 box_width = len(i_lines[1][0])
+
+
+def pause_symbol():
+    """
+    Replaces the play symbol with the pause symbol.
+    """
+    line1 = i_lines[2][0][0:10] + paus1 + i_lines[2][0][16:]
+    line2 = i_lines[3][0][0:10] + paus2 + i_lines[3][0][16:]
+    line3 = i_lines[4][0][0:10] + paus3 + i_lines[4][0][16:]
+
+    i_lines[2] = (line1, True)
+    i_lines[3] = (line2, True)
+    i_lines[4] = (line3, True)
+
+
+def play_symbol():
+    """
+    Replaces the pause symbol with the play symbol.
+    """
+    line1 = i_lines[2][0][0:10] + play1 + i_lines[2][0][16:]
+    line2 = i_lines[3][0][0:10] + play2 + i_lines[3][0][16:]
+    line3 = i_lines[4][0][0:10] + play3 + i_lines[4][0][16:]
+
+    i_lines[2] = (line1, True)
+    i_lines[3] = (line2, True)
+    i_lines[4] = (line3, True)
 
 
 def redraw():
@@ -209,8 +237,12 @@ def main():
                 elif event.key == keyboard.Key.pause:
                     if pygame.mixer.music.get_busy():
                         pygame.mixer.music.pause()
+                        play_symbol()
+                        redraw()
                     else:
                         pygame.mixer.music.unpause()
+                        pause_symbol()
+                        redraw()
 
                 # If the PAGE DOWN key is pressed, shuffle
                 elif event.key == keyboard.Key.page_down:
@@ -220,6 +252,8 @@ def main():
                         i_lines[0] = (strip_path_from_filename(m_file), False)
                         redraw()
                         pygame.mixer.music.play()
+                        pause_symbol()
+                        redraw()
                     except pygame.error:
                         pass
 
