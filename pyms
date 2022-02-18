@@ -66,6 +66,20 @@ def play_symbol():
     i_lines[4] = (line3, True)
 
 
+def exit_gracefully():
+    """
+    Executes whenever the signal SIGINT is received.
+
+    Args:
+        signum (int): The signal number.
+        frame (frame): The frame.
+    """
+    pygame.mixer.music.stop()
+    os.system("clear")
+    cursor.show()
+    os._exit(0)
+
+
 def redraw():
     """
     Clears the screen and redraws the ui.
@@ -73,6 +87,17 @@ def redraw():
     os.system("clear")
     print(boxer(i_lines))
     sys.stdout.flush()
+
+
+def exit_handler(signum, frame):
+    """
+    Executes whenever the signal SIGINT is received.
+
+    Args:
+        signum (int): The signal number.
+        frame (frame): The frame.
+    """
+    exit_gracefully()
 
 
 def resize_handler(signum, frame):
@@ -215,61 +240,55 @@ def keyboard_listener():
     global i_lines, m_file
 
     press_or_release = defaultdict(lambda: 0)
-    try:
-        with keyboard.Events() as events:
-            for event in events:
 
-                # (Clear user input)
-                print(" "*16 + "\r", end="")
+    with keyboard.Events() as events:
+        for event in events:
 
-                # (Check only for key presses)
-                press_or_release[event.key] += 1
-                if not press_or_release[event.key] % 2:
-                    continue
+            # (Clear user input)
+            print(" "*16 + "\r", end="")
 
-                # If the ESC key is pressed, exit
-                if event.key == keyboard.Key.esc:
-                    raise KeyboardInterrupt
+            # (Check only for key presses)
+            press_or_release[event.key] += 1
+            if not press_or_release[event.key] % 2:
+                continue
 
-                # If the PAUSE key is pressed, play/pause
-                elif event.key == keyboard.Key.pause:
-                    if pygame.mixer.music.get_busy():
-                        pygame.mixer.music.pause()
-                        play_symbol()
-                    else:
-                        pygame.mixer.music.unpause()
-                        pause_symbol()
+            # If the ESC key is pressed, exit
+            if event.key == keyboard.Key.esc:
+                exit_gracefully()
+
+            # If the PAUSE key is pressed, play/pause
+            elif event.key == keyboard.Key.pause:
+                if pygame.mixer.music.get_busy():
+                    pygame.mixer.music.pause()
+                    play_symbol()
+                else:
+                    pygame.mixer.music.unpause()
+                    pause_symbol()
+                redraw()
+
+            # If the PAGE DOWN key is pressed, shuffle
+            elif event.key == keyboard.Key.page_down:
+                try:
+                    m_file = random_file(m_file)
+                    pygame.mixer.music.load(m_file)
+                    i_lines[0] = (strip_path_from_filename(m_file), False)
+                    pygame.mixer.music.play()
+                    pause_symbol()
                     redraw()
+                except pygame.error:
+                    pass
 
-                # If the PAGE DOWN key is pressed, shuffle
-                elif event.key == keyboard.Key.page_down:
-                    try:
-                        m_file = random_file(m_file)
-                        pygame.mixer.music.load(m_file)
-                        i_lines[0] = (strip_path_from_filename(m_file), False)
-                        pygame.mixer.music.play()
-                        pause_symbol()
-                        redraw()
-                    except pygame.error:
-                        pass
+            # If the F8 key is pressed, lower volume
+            elif event.key == keyboard.Key.f8:
+                curr_vol = pygame.mixer.music.get_volume()
+                new_vol = round(round(curr_vol, 1), 8) - 0.10000000
+                pygame.mixer.music.set_volume(new_vol)
 
-                # If the F8 key is pressed, lower volume
-                elif event.key == keyboard.Key.f8:
-                    curr_vol = pygame.mixer.music.get_volume()
-                    new_vol = round(round(curr_vol, 1), 8) - 0.10000000
-                    pygame.mixer.music.set_volume(new_vol)
-
-                # If the F9 key is pressed, raise volume
-                elif event.key == keyboard.Key.f9:
-                    curr_vol = pygame.mixer.music.get_volume()
-                    new_vol = round(round(curr_vol, 1), 8) + 0.10000000
-                    pygame.mixer.music.set_volume(new_vol)
-
-    except KeyboardInterrupt:
-        pygame.mixer.music.stop()
-        os.system("clear")
-        cursor.show()
-        os._exit(0)
+            # If the F9 key is pressed, raise volume
+            elif event.key == keyboard.Key.f9:
+                curr_vol = pygame.mixer.music.get_volume()
+                new_vol = round(round(curr_vol, 1), 8) + 0.10000000
+                pygame.mixer.music.set_volume(new_vol)
 
 
 def infinite_queue(event_type):
@@ -286,7 +305,7 @@ def infinite_queue(event_type):
 
     while True:
         event = pygame.event.wait()        # Waiting is better than polling
-        # for event in pygame.event.get(): # Nice way to heat the CPU!
+        # for event in pygame.event.get(): # Nice way to heat your CPU!
         if event.type == event_type:
             try:
                 m_file = random_file(m_file)
@@ -327,6 +346,7 @@ def main():
     i_lines = [(strip_path_from_filename(m_file), False)] + i_lines
     redraw()
     signal.signal(signal.SIGWINCH, resize_handler)
+    signal.signal(signal.SIGINT, exit_gracefully)
 
     # Initialize the keyboard listener
     th = threading.Thread(target=keyboard_listener)
