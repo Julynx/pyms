@@ -72,6 +72,7 @@ def redraw():
     """
     os.system("clear")
     print(boxer(i_lines))
+    sys.stdout.flush()
 
 
 def resize_handler(signum, frame):
@@ -179,7 +180,7 @@ def boxer(lines):
     height = size.lines
     term = "..."
 
-    print("\n" * int((height/2) - (len(lines)/2)), end="")
+    string = string + "\n" * int((height/2) - (len(lines)/2))
 
     # Create the body
     for tupl in lines:
@@ -218,10 +219,10 @@ def keyboard_listener():
         with keyboard.Events() as events:
             for event in events:
 
-                # Clear user input
+                # (Clear user input)
                 print(" "*16 + "\r", end="")
 
-                # Check only for key presses
+                # (Check only for key presses)
                 press_or_release[event.key] += 1
                 if not press_or_release[event.key] % 2:
                     continue
@@ -284,7 +285,8 @@ def infinite_queue(event_type):
     global m_file
 
     while True:
-        event = pygame.event.wait()
+        event = pygame.event.wait()        # Waiting is better than polling
+        # for event in pygame.event.get(): # Nice way to heat the CPU!
         if event.type == event_type:
             try:
                 m_file = random_file(m_file)
@@ -330,8 +332,12 @@ def main():
     th = threading.Thread(target=keyboard_listener)
     th.start()
 
-    # The main thread will wait for the music to end to play a random song
-    infinite_queue(MUSIC_END)
+    # Initialize the infinite queue
+    th2 = threading.Thread(target=infinite_queue, args=(MUSIC_END,))
+    th2.start()
+
+    # Placing infinite_queue in the main thread was making resizing laggy
+    # so I placed it in a separate thread. Idk why, honestly, but it works.
 
 
 if __name__ == "__main__":
