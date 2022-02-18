@@ -194,7 +194,7 @@ def boxer(lines):
             # Center the line
             formatted_line = line.center(min(box_width, width))
 
-        elif line_len > min(box_width, width):
+        else:
             # Left justify the line
             formatted_line = line.ljust(min(box_width, width))
 
