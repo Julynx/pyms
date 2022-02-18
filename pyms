@@ -228,10 +228,7 @@ def keyboard_listener():
 
                 # If the ESC key is pressed, exit
                 if event.key == keyboard.Key.esc:
-                    pygame.mixer.music.stop()
-                    os.system("clear")
-                    cursor.show()
-                    sys.exit(0)
+                    raise KeyboardInterrupt
 
                 # If the PAUSE key is pressed, play/pause
                 elif event.key == keyboard.Key.pause:
@@ -271,10 +268,10 @@ def keyboard_listener():
         pygame.mixer.music.stop()
         os.system("clear")
         cursor.show()
-        sys.exit(0)
+        os._exit(0)
 
 
-def infinite_queue(event):
+def infinite_queue(event_type):
     """
     Captures a song end event and adds a new song to the queue.
     The new song is randomly selected from the directory and played.
@@ -288,7 +285,7 @@ def infinite_queue(event):
 
     while True:
         event = pygame.event.wait()
-        if event.type == event:
+        if event.type == event_type:
             try:
                 m_file = random_file(m_file)
                 pygame.mixer.music.load(m_file)
@@ -330,7 +327,7 @@ def main():
     signal.signal(signal.SIGWINCH, resize_handler)
 
     # Initialize the keyboard listener
-    th = threading.Thread(target=keyboard_listener())
+    th = threading.Thread(target=keyboard_listener)
     th.start()
 
     # The main thread will wait for the music to end to play a random song
