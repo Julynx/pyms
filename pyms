@@ -15,9 +15,9 @@ from collections import defaultdict
 from pynput import keyboard
 with contextlib.redirect_stdout(None):
     import pygame
+import threading
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-center = True
 
 i_lines = [
     ("", True),
@@ -37,6 +37,7 @@ paus2 = "██  ██"
 paus3 = "██  ██"
 
 box_width = len(i_lines[1][0])
+m_file = ""
 
 
 def pause_symbol():
@@ -132,11 +133,28 @@ def random_file(path):
     old_filename = strip_path_from_filename(path)
     stripped_path = strip_filename_from_path(path)
 
+    # Consider only music files in the directory
     files = os.listdir(stripped_path)
-    random_file = files[random.randint(0, len(files)-1)]
-    while random_file == old_filename:
-        random_file = files[random.randint(0, len(files)-1)]
+    music_files = []
+    for file in files:
+        if (file.endswith(".mp3")
+                or file.endswith(".wav")
+                or file.endswith(".ogg")
+            ) and file != old_filename:
+            music_files.append(file)
 
+    try:
+        # Get a random file from the directory (do not repeat the original file)
+        random_file = random.choice(music_files)
+    except IndexError or ValueError:
+        pygame.mixer.music.rewind()
+        if not pygame.mixer.music.get_busy():
+            pygame.mixer.music.unpause()
+            pause_symbol()
+            redraw()
+        raise pygame.error("No music files found in the directory.")
+
+    # Return the path to the new random file
     return os.path.join(stripped_path, random_file)
 
 
@@ -154,65 +172,47 @@ def boxer(lines):
         str: A string of the box with the lines fitted in.
     """
     global box_width
+
     string = ""
     size = os.get_terminal_size()
     width = size.columns
     height = size.lines
     term = "..."
 
-    if center:
-        print("\n" * int((height/2) - (len(lines)/2)), end="")
+    print("\n" * int((height/2) - (len(lines)/2)), end="")
 
     # Create the body
     for tupl in lines:
         line = tupl[0]
         line_len = len(line)
 
-        if tupl[1]:
-            if line_len > min(box_width, width):
-                line = line[:min(box_width, width) - len(term)] + term
+        # Shorten the line if it is too long
+        if line_len > min(box_width, width):
+            line = line[:min(box_width, width) - len(term)] + term
 
+        if tupl[1]:
             # Center the line
             formatted_line = line.center(min(box_width, width))
-        else:
-            if line_len > min(box_width, width):
-                line = line[:min(box_width, width) - len(term)] + term
+
+        elif line_len > min(box_width, width):
             # Left justify the line
             formatted_line = line.ljust(min(box_width, width))
 
-        # Center the line
+        # Center the final line
         formatted_line = formatted_line.center(width)
         string += formatted_line + "\n"
 
     return string
 
 
-def main():
+def keyboard_listener():
+    """
+    Executes in a separate thread to capture pressed keys.
+    Keeps that thread blocked until a key is pressed and then
+    the key is captured and handled.
+    """
+    global i_lines, m_file
 
-    global i_lines
-
-    # Check input arguments
-    if len(sys.argv) != 2:
-        print("Usage: pyms <file>")
-        exit(1)
-    m_file = sys.argv[1]
-
-    # Initialize pygame mixer
-    pygame.init()
-    try:
-        pygame.mixer.music.load(sys.argv[1])
-        pygame.mixer.music.play()
-    except pygame.error:
-        print("Error: Could not load music file.")
-        sys.exit(1)
-
-    # Fancy interface magic
-    cursor.hide()
-    i_lines = [(strip_path_from_filename(m_file), False)] + i_lines
-    redraw()
-    signal.signal(signal.SIGWINCH, resize_handler)
-
-    # Main listener loop
     press_or_release = defaultdict(lambda: 0)
     try:
         with keyboard.Events() as events:
@@ -273,11 +273,68 @@ def main():
         cursor.show()
         sys.exit(0)
 
-    # Program exit
-    pygame.mixer.music.stop()
-    os.system("clear")
-    cursor.show()
-    sys.exit(0)
+
+def infinite_queue(event):
+    """
+    Captures a song end event and adds a new song to the queue.
+    The new song is randomly selected from the directory and played.
+    The thread is blocked waiting for the song to end and only then
+    it unblocks and plays the next song so run all the threads 
+    you would like to run before calling this function on the main thread.
+    Args:
+        event (pygame.event): The event that is captured. Usually MUSIC_END
+    """
+    global m_file
+
+    while True:
+        event = pygame.event.wait()
+        if event.type == event:
+            try:
+                m_file = random_file(m_file)
+                pygame.mixer.music.load(m_file)
+                i_lines[0] = (strip_path_from_filename(m_file), False)
+                pygame.mixer.music.play()
+                pause_symbol()
+                redraw()
+            except pygame.error:
+                pass
+
+
+def main():
+
+    global i_lines, m_file
+
+    # Check input arguments
+    if len(sys.argv) != 2:
+        print("Usage: pyms <file>")
+        exit(1)
+    m_file = sys.argv[1]
+
+    # Initialize pygame mixer
+    pygame.init()
+    try:
+        pygame.mixer.music.load(sys.argv[1])
+        pygame.mixer.music.play()
+    except pygame.error:
+        print("Error: Could not load music file.")
+        sys.exit(1)
+
+    # Send an event when the song ends
+    MUSIC_END = pygame.USEREVENT+1
+    pygame.mixer.music.set_endevent(MUSIC_END)
+
+    # Fancy interface magic
+    cursor.hide()
+    i_lines = [(strip_path_from_filename(m_file), False)] + i_lines
+    redraw()
+    signal.signal(signal.SIGWINCH, resize_handler)
+
+    # Initialize the keyboard listener
+    th = threading.Thread(target=keyboard_listener())
+    th.start()
+
+    # The main thread will wait for the music to end to play a random song
+    infinite_queue(MUSIC_END)
 
 
 if __name__ == "__main__":
