@@ -40,30 +40,27 @@ box_width = len(i_lines[1][0])
 m_file = ""
 
 
-def pause_symbol():
+def exit_handler(signum, frame):
     """
-    Replaces the play symbol with the pause symbol.
-    """
-    line1 = i_lines[2][0][0:10] + paus1 + i_lines[2][0][16:]
-    line2 = i_lines[3][0][0:10] + paus2 + i_lines[3][0][16:]
-    line3 = i_lines[4][0][0:10] + paus3 + i_lines[4][0][16:]
+    Executes whenever the signal SIGINT is received.
 
-    i_lines[2] = (line1, True)
-    i_lines[3] = (line2, True)
-    i_lines[4] = (line3, True)
+    Args:
+        signum (int): The signal number.
+        frame (frame): The frame.
+    """
+    exit_gracefully()
 
 
-def play_symbol():
+def resize_handler(signum, frame):
     """
-    Replaces the pause symbol with the play symbol.
-    """
-    line1 = i_lines[2][0][0:10] + play1 + i_lines[2][0][16:]
-    line2 = i_lines[3][0][0:10] + play2 + i_lines[3][0][16:]
-    line3 = i_lines[4][0][0:10] + play3 + i_lines[4][0][16:]
+    Executes whenever the size of the terminal is changed.
+    Calls redraw() in execution to update the screen.
 
-    i_lines[2] = (line1, True)
-    i_lines[3] = (line2, True)
-    i_lines[4] = (line3, True)
+    Args:
+        signum (int): The signal number.
+        frame (frame): The frame.
+    """
+    redraw()
 
 
 def exit_gracefully():
@@ -89,27 +86,30 @@ def redraw():
     sys.stdout.flush()
 
 
-def exit_handler(signum, frame):
+def pause_symbol():
     """
-    Executes whenever the signal SIGINT is received.
-
-    Args:
-        signum (int): The signal number.
-        frame (frame): The frame.
+    Replaces the play symbol with the pause symbol.
     """
-    exit_gracefully()
+    line1 = i_lines[2][0][0:10] + paus1 + i_lines[2][0][16:]
+    line2 = i_lines[3][0][0:10] + paus2 + i_lines[3][0][16:]
+    line3 = i_lines[4][0][0:10] + paus3 + i_lines[4][0][16:]
+
+    i_lines[2] = (line1, True)
+    i_lines[3] = (line2, True)
+    i_lines[4] = (line3, True)
 
 
-def resize_handler(signum, frame):
+def play_symbol():
     """
-    Executes whenever the size of the terminal is changed.
-    Calls redraw() in execution to update the screen.
-
-    Args:
-        signum (int): The signal number.
-        frame (frame): The frame.
+    Replaces the pause symbol with the play symbol.
     """
-    redraw()
+    line1 = i_lines[2][0][0:10] + play1 + i_lines[2][0][16:]
+    line2 = i_lines[3][0][0:10] + play2 + i_lines[3][0][16:]
+    line3 = i_lines[4][0][0:10] + play3 + i_lines[4][0][16:]
+
+    i_lines[2] = (line1, True)
+    i_lines[3] = (line2, True)
+    i_lines[4] = (line3, True)
 
 
 def strip_path_from_filename(path):
