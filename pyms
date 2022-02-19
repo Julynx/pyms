@@ -345,7 +345,7 @@ def main():
     i_lines = [(strip_path_from_filename(m_file), False)] + i_lines
     redraw()
     signal.signal(signal.SIGWINCH, resize_handler)
-    signal.signal(signal.SIGINT, exit_gracefully)
+    signal.signal(signal.SIGINT, exit_handler)
 
     # Initialize the keyboard listener
     th = threading.Thread(target=keyboard_listener)
