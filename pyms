@@ -203,7 +203,7 @@ def boxer(lines):
     size = os.get_terminal_size()
     width = size.columns
     height = size.lines
-    string = "\n" * int((height/2) - (len(lines)/2))
+    string = "\n" * ( int(height/2) - int(len(lines)/2) )
     term = "..."
 
     # Create the body
