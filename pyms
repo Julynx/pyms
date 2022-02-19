@@ -82,6 +82,7 @@ def redraw():
     Clears the screen and redraws the ui.
     """
     os.system("clear")
+    sys.stdout.flush()
     print(boxer(i_lines))
     sys.stdout.flush()
 
@@ -199,13 +200,11 @@ def boxer(lines):
     """
     global box_width
 
-    string = ""
     size = os.get_terminal_size()
     width = size.columns
     height = size.lines
+    string = "\n" * int((height/2) - (len(lines)/2))
     term = "..."
-
-    string = string + "\n" * int((height/2) - (len(lines)/2))
 
     # Create the body
     for tupl in lines:
