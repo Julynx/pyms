@@ -174,11 +174,6 @@ def random_file(path):
         # Get a random file from the directory (do not repeat the original file)
         random_file = random.choice(music_files)
     except IndexError or ValueError:
-        pygame.mixer.music.rewind()
-        if not pygame.mixer.music.get_busy():
-            pygame.mixer.music.unpause()
-            pause_symbol()
-            redraw()
         raise pygame.error("No music files found in the directory.")
 
     # Return the path to the new random file
@@ -275,6 +270,11 @@ def keyboard_listener():
                     pause_symbol()
                     redraw()
                 except pygame.error:
+                    pygame.mixer.music.rewind()
+                    if not pygame.mixer.music.get_busy():
+                        pygame.mixer.music.unpause()
+                        pause_symbol()
+                        redraw()
                     pass
 
             # If the F8 key is pressed, lower volume
@@ -326,11 +326,20 @@ def main():
         print("Usage: pyms <file>")
         exit(1)
     m_file = sys.argv[1]
+    
+    # If the path is a folder, get a random file from it
+    if os.path.isdir(m_file):
+        try:
+            m_file = m_file + "/" if m_file[-1] != "/" else m_file    
+            m_file = random_file(m_file)
+        except pygame.error:
+            print("No music files found in the directory.")
+            exit(1)
 
     # Initialize pygame mixer
     pygame.init()
     try:
-        pygame.mixer.music.load(sys.argv[1])
+        pygame.mixer.music.load(m_file)
         pygame.mixer.music.play()
     except pygame.error:
         print("Error: Could not load music file.")
