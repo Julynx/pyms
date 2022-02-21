@@ -16,10 +16,15 @@ from pynput import keyboard
 with contextlib.redirect_stdout(None):
     import pygame
 import threading
+import mutagen
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
+box_width = 46
+
 i_lines = [
+    ("", True),
+    ("░"*box_width, True),
     ("", True),
     ("██████    ██  ██                ██      █ ████", True),
     ("██████    ██  ██    ██████    ██████      ██  ", True),
@@ -28,15 +33,15 @@ i_lines = [
     ("escape    pause       F8        F9      pg_dwn", True)
 ]
 
-play1 = "██▄▄  "  # i_lines[2][0][10:16]
-play2 = "██████"  # i_lines[3][0][10:16]
-play3 = "██▀▀  "  # i_lines[4][0][10:16]
+play1 = "██▄▄  "  # i_lines[4][0][10:16]
+play2 = "██████"  # i_lines[5][0][10:16]
+play3 = "██▀▀  "  # i_lines[6][0][10:16]
 
 paus1 = "██  ██"
 paus2 = "██  ██"
 paus3 = "██  ██"
 
-box_width = len(i_lines[1][0])
+
 m_file = ""
 
 
@@ -91,26 +96,26 @@ def pause_symbol():
     """
     Replaces the play symbol with the pause symbol.
     """
-    line1 = i_lines[2][0][0:10] + paus1 + i_lines[2][0][16:]
-    line2 = i_lines[3][0][0:10] + paus2 + i_lines[3][0][16:]
-    line3 = i_lines[4][0][0:10] + paus3 + i_lines[4][0][16:]
+    line1 = i_lines[4][0][0:10] + paus1 + i_lines[4][0][16:]
+    line2 = i_lines[5][0][0:10] + paus2 + i_lines[5][0][16:]
+    line3 = i_lines[6][0][0:10] + paus3 + i_lines[6][0][16:]
 
-    i_lines[2] = (line1, True)
-    i_lines[3] = (line2, True)
-    i_lines[4] = (line3, True)
+    i_lines[4] = (line1, True)
+    i_lines[5] = (line2, True)
+    i_lines[6] = (line3, True)
 
 
 def play_symbol():
     """
     Replaces the pause symbol with the play symbol.
     """
-    line1 = i_lines[2][0][0:10] + play1 + i_lines[2][0][16:]
-    line2 = i_lines[3][0][0:10] + play2 + i_lines[3][0][16:]
-    line3 = i_lines[4][0][0:10] + play3 + i_lines[4][0][16:]
+    line1 = i_lines[4][0][0:10] + play1 + i_lines[4][0][16:]
+    line2 = i_lines[5][0][0:10] + play2 + i_lines[5][0][16:]
+    line3 = i_lines[6][0][0:10] + play3 + i_lines[6][0][16:]
 
-    i_lines[2] = (line1, True)
-    i_lines[3] = (line2, True)
-    i_lines[4] = (line3, True)
+    i_lines[4] = (line1, True)
+    i_lines[5] = (line2, True)
+    i_lines[6] = (line3, True)
 
 
 def strip_path_from_filename(path):
@@ -165,8 +170,8 @@ def random_file(path):
     music_files = []
     for file in files:
         if (file.endswith(".mp3")
-                or file.endswith(".wav")
-                or file.endswith(".ogg")
+            or file.endswith(".wav")
+            or file.endswith(".ogg")
             ) and file != old_filename:
             music_files.append(file)
 
@@ -198,7 +203,7 @@ def boxer(lines):
     size = os.get_terminal_size()
     width = size.columns
     height = size.lines
-    string = "\n" * ( int(height/2) - int(len(lines)/2) )
+    string = "\n" * (int(height/2) - int(len(lines)/2))
     term = "..."
 
     # Create the body
@@ -223,6 +228,21 @@ def boxer(lines):
         string += formatted_line + "\n"
 
     return string
+
+
+def bar(percentage, max_width):
+    """
+    Creates a bar of the given percentage.
+    Args:
+        percentage (float): The percentage of the bar to be filled.
+        max_width (int): The maximum width of the bar.
+    Returns:
+        str: A string of the bar.
+    """
+    bar_width = int(percentage * max_width)
+    bar = "█" * bar_width + "░" * (max_width - bar_width)
+
+    return bar
 
 
 def keyboard_listener():
@@ -317,20 +337,49 @@ def infinite_queue(event_type):
                 pass
 
 
-def main():
+def progress_bar():
+    """
+    Creates a progress bar that updates every second.
+    The thread is blocked updating the bar until the song is finished.
+    """
 
     global i_lines, m_file
+
+    while True:
+        time.sleep(1)
+
+        # Load the audio file to mutagen
+        audio = mutagen.File(m_file)
+
+        # Obtain current and total times
+        curr_time = pygame.mixer.music.get_pos()
+        total_time = audio.info.length
+
+        # Calculate the percentage of the song that is played
+        percentage = ((curr_time/1000) / total_time)
+
+        # Get the progress bar
+        progress_bar = bar(percentage, box_width)
+
+        # Insert it into the music player interface and redraw
+        i_lines[2] = (progress_bar, True)
+        redraw()
+
+
+def main():
+
+    global i_lines, m_file, box_width
 
     # Check input arguments
     if len(sys.argv) != 2:
         print("Usage: pyms <file>")
         exit(1)
     m_file = sys.argv[1]
-    
+
     # If the path is a folder, get a random file from it
     if os.path.isdir(m_file):
         try:
-            m_file = m_file + "/" if m_file[-1] != "/" else m_file    
+            m_file = m_file + "/" if m_file[-1] != "/" else m_file
             m_file = random_file(m_file)
         except pygame.error:
             print("No music files found in the directory.")
@@ -356,16 +405,16 @@ def main():
     signal.signal(signal.SIGWINCH, resize_handler)
     signal.signal(signal.SIGINT, exit_handler)
 
-    # Initialize the keyboard listener
+    # THRD1 - Initialize the keyboard listener
     th = threading.Thread(target=keyboard_listener)
     th.start()
 
-    # Initialize the infinite queue
+    # THRD2 - Initialize the infinite queue
     th2 = threading.Thread(target=infinite_queue, args=(MUSIC_END,))
     th2.start()
 
-    # Placing infinite_queue in the main thread was making resizing laggy
-    # so I placed it in a separate thread. Idk why, honestly, but it works.
+    # MAIN - Dynamic progress bar
+    progress_bar()
 
 
 if __name__ == "__main__":
