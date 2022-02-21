@@ -22,9 +22,13 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
 box_width = 46
 
+polling_interval = 0.5
+
 i_lines = [
     ("", True),
     ("░"*box_width, True),
+    ("", True),
+    ("00:00 " + " "*(box_width - 12) + " 00:00", True),
     ("", True),
     ("██████    ██  ██                ██      █ ████", True),
     ("██████    ██  ██    ██████    ██████      ██  ", True),
@@ -96,26 +100,26 @@ def pause_symbol():
     """
     Replaces the play symbol with the pause symbol.
     """
-    line1 = i_lines[4][0][0:10] + paus1 + i_lines[4][0][16:]
-    line2 = i_lines[5][0][0:10] + paus2 + i_lines[5][0][16:]
-    line3 = i_lines[6][0][0:10] + paus3 + i_lines[6][0][16:]
+    line1 = i_lines[6][0][0:10] + paus1 + i_lines[6][0][16:]
+    line2 = i_lines[7][0][0:10] + paus2 + i_lines[7][0][16:]
+    line3 = i_lines[8][0][0:10] + paus3 + i_lines[8][0][16:]
 
-    i_lines[4] = (line1, True)
-    i_lines[5] = (line2, True)
-    i_lines[6] = (line3, True)
+    i_lines[6] = (line1, True)
+    i_lines[7] = (line2, True)
+    i_lines[8] = (line3, True)
 
 
 def play_symbol():
     """
     Replaces the pause symbol with the play symbol.
     """
-    line1 = i_lines[4][0][0:10] + play1 + i_lines[4][0][16:]
-    line2 = i_lines[5][0][0:10] + play2 + i_lines[5][0][16:]
-    line3 = i_lines[6][0][0:10] + play3 + i_lines[6][0][16:]
+    line1 = i_lines[6][0][0:10] + play1 + i_lines[6][0][16:]
+    line2 = i_lines[7][0][0:10] + play2 + i_lines[7][0][16:]
+    line3 = i_lines[8][0][0:10] + play3 + i_lines[8][0][16:]
 
-    i_lines[4] = (line1, True)
-    i_lines[5] = (line2, True)
-    i_lines[6] = (line3, True)
+    i_lines[6] = (line1, True)
+    i_lines[7] = (line2, True)
+    i_lines[8] = (line3, True)
 
 
 def strip_path_from_filename(path):
@@ -245,6 +249,41 @@ def bar(percentage, max_width):
     return bar
 
 
+def song_info_parser(current_secs, total_secs, volume, max_width):
+    """
+    Parses the current time and total time of the song,
+    as well as the volume centered in the line.
+    Args:
+        current_secs (int): The current seconds of the song.
+        total_secs (int): The total seconds of the song.
+        volume (float): The volume of the song.
+        max_width (int): The maximum width of the line.
+    Returns:
+        str: A string of the song info.
+    """
+    # Convert the seconds to minutes and seconds
+    current_mins = int(current_secs / 60) 
+    current_secs = int(current_secs % 60)
+    total_mins = int(total_secs / 60)
+    total_secs = int(total_secs % 60)
+
+    # Convert the volume to a percentage
+    volume = int(volume * 100)
+    volume = volume + 1 if volume % 10 == 9 else volume
+
+    # Format the time
+    current_time = "{:02d}:{:02d}".format(current_mins, current_secs)
+    total_time = "{:02d}:{:02d}".format(total_mins, total_secs)
+
+    # Format the volume
+    volume = str(volume) + "%"
+
+    # Format the line
+    line = current_time + volume.center(max_width - len(current_time) - len(total_time)) + total_time
+
+    return line
+
+
 def keyboard_listener():
     """
     Executes in a separate thread to capture pressed keys.
@@ -343,10 +382,10 @@ def progress_bar():
     The thread is blocked updating the bar until the song is finished.
     """
 
-    global i_lines, m_file
+    global i_lines, m_file, polling_interval
 
     while True:
-        time.sleep(1)
+        time.sleep(polling_interval)
 
         # Load the audio file to mutagen
         audio = mutagen.File(m_file)
@@ -354,15 +393,17 @@ def progress_bar():
         # Obtain current and total times
         curr_time = pygame.mixer.music.get_pos()
         total_time = audio.info.length
+        curr_time = curr_time / 1000
 
         # Calculate the percentage of the song that is played
-        percentage = ((curr_time/1000) / total_time)
+        percentage = curr_time / total_time
 
         # Get the progress bar
         progress_bar = bar(percentage, box_width)
 
         # Insert it into the music player interface and redraw
         i_lines[2] = (progress_bar, True)
+        i_lines[4] = (song_info_parser(curr_time, total_time, pygame.mixer.music.get_volume(), box_width), True)
         redraw()
 
 
