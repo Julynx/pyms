@@ -17,12 +17,8 @@ with contextlib.redirect_stdout(None):
 import threading
 import mutagen
 
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
 box_width = 46
-
-polling_interval = 0.5
-
 i_lines = [
     ("", True),
     ("░"*box_width, True),
@@ -45,6 +41,7 @@ paus2 = "██  ██"
 paus3 = "██  ██"
 
 m_file = ""
+polling_interval = 0.5
 
 
 def exit_handler(signum, frame):
@@ -172,14 +169,12 @@ def random_file(path):
     files = os.listdir(stripped_path)
     music_files = []
     for file in files:
-        if (file.endswith(".mp3")
-            or file.endswith(".wav")
-            or file.endswith(".ogg")
-            ) and file != old_filename:
-            music_files.append(file)
+        if file.endswith((".mp3", ".wav", ".ogg")):
+            if file != old_filename:
+                music_files.append(file)
 
     try:
-        # Get a random file from the directory (do not repeat the original file)
+        # Get a random file from the directory (dont repeat the original file)
         random_file = random.choice(music_files)
     except IndexError or ValueError:
         raise pygame.error("No music files found in the directory.")
@@ -262,7 +257,7 @@ def song_info_parser(current_secs, total_secs, volume, max_width):
     """
     # Convert the seconds to minutes and seconds
     current_mins, current_secs = divmod(current_secs, 60)
-    total_mins, total_secs = divmod(total_secs, 60)    
+    total_mins, total_secs = divmod(total_secs, 60)
 
     # Convert the volume to a percentage
     volume = int(volume * 100)
@@ -276,7 +271,8 @@ def song_info_parser(current_secs, total_secs, volume, max_width):
     volume = "Volume: " + str(volume) + "%"
 
     # Format the final info string
-    line = current_time + " / " + total_time + volume.rjust(max_width - len(current_time) - len(total_time) - 3)
+    line = current_time + " / " + total_time + \
+        volume.rjust(max_width - len(current_time) - len(total_time) - 3)
     return line
 
 
@@ -311,7 +307,8 @@ def update_song_info():
     total_time = int(audio.info.length)
 
     # Call song_info_parser to get the song info
-    song_info = song_info_parser(curr_time, total_time, pygame.mixer.music.get_volume(), box_width)
+    song_info = song_info_parser(
+        curr_time, total_time, pygame.mixer.music.get_volume(), box_width)
     return song_info
 
 
@@ -357,7 +354,7 @@ def keyboard_listener():
                     m_file = random_file(m_file)
                     pygame.mixer.music.load(m_file)
                     pygame.mixer.music.play()
-                    
+
                     # Update the song title, info and bar and redraw
                     i_lines[0] = (strip_path_from_filename(m_file), False)
                     i_lines[2] = (update_bar(), True)
@@ -370,7 +367,7 @@ def keyboard_listener():
                     pygame.mixer.music.rewind()
                     if not pygame.mixer.music.get_busy():
                         pygame.mixer.music.unpause()
-                        
+
                         # Update the song info and bar and redraw
                         i_lines[2] = (update_bar(), True)
                         i_lines[4] = (update_song_info(), True)
@@ -403,7 +400,7 @@ def infinite_queue(event_type):
     Captures a song end event and adds a new song to the queue.
     The new song is randomly selected from the directory and played.
     The thread is blocked waiting for the song to end and only then
-    it unblocks and plays the next song so run all the threads 
+    it unblocks and plays the next song so run all the threads
     you would like to run before calling this function on the main thread.
     Args:
         event (pygame.event): The event that is captured. Usually MUSIC_END
@@ -411,17 +408,17 @@ def infinite_queue(event_type):
     global m_file
 
     while True:
-        
+
         # When the song ends, play a new random song
         event = pygame.event.wait()
         if event.type == event_type:
             try:
-            
+
                 # Get a random file, load it and play it
                 m_file = random_file(m_file)
                 pygame.mixer.music.load(m_file)
                 pygame.mixer.music.play()
-                
+
                 # Update title, bar and song info and redraw
                 i_lines[0] = (strip_path_from_filename(m_file), False)
                 i_lines[2] = (update_bar(), True)
@@ -441,9 +438,9 @@ def poll_interface(interval):
         interval (double): The interval in seconds between updates.
     """
     while True:
-        
+
         time.sleep(interval)
-        
+
         # Update bar and song info and redraw
         i_lines[2] = (update_bar(), True)
         i_lines[4] = (update_song_info(), True)
