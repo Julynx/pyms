@@ -8,12 +8,8 @@
 <br>
 
 ## Dependencies
-pyms uses [pygame](https://pypi.org/project/pygame/), [pynput](https://pypi.org/project/pynput/) & [cursor](https://pypi.org/project/cursor/), which can be installed by executing:
-```
-pip3 install pygame
-pip3 install pynput
-pip3 install cursor
-```
+pyms uses [pygame](https://pypi.org/project/pygame/), [pynput](https://pypi.org/project/pynput/), [cursor](https://pypi.org/project/cursor/) & [mutagen](https://pypi.org/project/mutagen/), with version numbers provided in the file `requirements.txt`.
+
 It has been tested with Python 3.8.10, results may vary if other versions are used.
 <br><br>
 
@@ -23,14 +19,16 @@ and install it in your `/usr/bin/` directory:
 ```
 git clone https://github.com/Julynx/pyms
 cd pyms
+pip3 install -r requirements.txt
 chmod +x pyms
-sudo cp pyms /usr/bin/
+sudo mv pyms /usr/bin/
 ```
 The program can now be ran from a terminal with the command `pyms`.
 <br><br>
 
 ## Usage
-Execute the following command to play the song passed as an argument:
+Execute the following command to play the song passed as argument:
 ```
-pyms <song.mp3>
+pyms <path/to/song.mp3>
 ```
+You can also specify a path to a directory and `pyms` will play a random file from that directory.
