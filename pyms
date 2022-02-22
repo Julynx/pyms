@@ -45,7 +45,6 @@ paus1 = "██  ██"
 paus2 = "██  ██"
 paus3 = "██  ██"
 
-
 m_file = ""
 
 
@@ -90,9 +89,10 @@ def redraw():
     """
     Clears the screen and redraws the ui.
     """
+    sys.stdout.flush()
     os.system("clear")
     sys.stdout.flush()
-    print(boxer(i_lines))
+    print(interface(i_lines))
     sys.stdout.flush()
 
 
@@ -189,7 +189,7 @@ def random_file(path):
     return os.path.join(stripped_path, random_file)
 
 
-def boxer(lines):
+def interface(lines):
     """
     Creates a box of the terminal size, enclosing the lines
     passed in as a list of tuples.
@@ -234,7 +234,7 @@ def boxer(lines):
     return string
 
 
-def bar(percentage, max_width):
+def bar_parser(percentage, max_width):
     """
     Creates a bar of the given percentage.
     Args:
@@ -262,10 +262,8 @@ def song_info_parser(current_secs, total_secs, volume, max_width):
         str: A string of the song info.
     """
     # Convert the seconds to minutes and seconds
-    current_mins = int(current_secs / 60) 
-    current_secs = int(current_secs % 60)
-    total_mins = int(total_secs / 60)
-    total_secs = int(total_secs % 60)
+    current_mins, current_secs = divmod(current_secs, 60)
+    total_mins, total_secs = divmod(total_secs, 60)    
 
     # Convert the volume to a percentage
     volume = int(volume * 100)
@@ -276,12 +274,46 @@ def song_info_parser(current_secs, total_secs, volume, max_width):
     total_time = "{:02d}:{:02d}".format(total_mins, total_secs)
 
     # Format the volume
-    volume = str(volume) + "%"
+    volume = "Volume: " + str(volume) + "%"
 
-    # Format the line
-    line = current_time + volume.center(max_width - len(current_time) - len(total_time)) + total_time
-
+    # Format the final info string
+    line = current_time + " / " + total_time + volume.rjust(max_width - len(current_time) - len(total_time) - 3)
     return line
+
+
+def update_bar():
+
+    global m_file, box_width
+
+    # Load the audio file to mutagen
+    audio = mutagen.File(m_file)
+
+    # Obtain current and total times
+    curr_time = int(pygame.mixer.music.get_pos() / 1000)
+    total_time = int(audio.info.length)
+
+    # Calculate the percentage of the song that is played
+    percentage = curr_time / total_time
+
+    # Get the progress bar
+    progress_bar = bar_parser(percentage, box_width)
+    return progress_bar
+
+
+def update_song_info():
+
+    global m_file, box_width
+
+    # Load the audio file to mutagen
+    audio = mutagen.File(m_file)
+
+    # Obtain current and total times
+    curr_time = int(pygame.mixer.music.get_pos() / 1000)
+    total_time = int(audio.info.length)
+
+    # Call song_info_parser to get the song info
+    song_info = song_info_parser(curr_time, total_time, pygame.mixer.music.get_volume(), box_width)
+    return song_info
 
 
 def keyboard_listener():
@@ -322,19 +354,29 @@ def keyboard_listener():
             # If the PAGE DOWN key is pressed, shuffle
             elif event.key == keyboard.Key.page_down:
                 try:
+                    # Get a random file, load it and play it
                     m_file = random_file(m_file)
                     pygame.mixer.music.load(m_file)
-                    i_lines[0] = (strip_path_from_filename(m_file), False)
                     pygame.mixer.music.play()
+                    
+                    # Update the song title, info and bar and redraw
+                    i_lines[0] = (strip_path_from_filename(m_file), False)
+                    i_lines[2] = (update_bar(), True)
+                    i_lines[4] = (update_song_info(), True)
                     pause_symbol()
                     redraw()
+
                 except pygame.error:
+                    # Rewind the current song if no random file is found
                     pygame.mixer.music.rewind()
                     if not pygame.mixer.music.get_busy():
                         pygame.mixer.music.unpause()
+                        
+                        # Update the song info and bar and redraw
+                        i_lines[2] = (update_bar(), True)
+                        i_lines[4] = (update_song_info(), True)
                         pause_symbol()
                         redraw()
-                    pass
 
             # If the F8 key is pressed, lower volume
             elif event.key == keyboard.Key.f8:
@@ -342,11 +384,19 @@ def keyboard_listener():
                 new_vol = round(round(curr_vol, 1), 8) - 0.10000000
                 pygame.mixer.music.set_volume(new_vol)
 
+                # Update the song info and redraw
+                i_lines[4] = (update_song_info(), True)
+                redraw()
+
             # If the F9 key is pressed, raise volume
             elif event.key == keyboard.Key.f9:
                 curr_vol = pygame.mixer.music.get_volume()
                 new_vol = round(round(curr_vol, 1), 8) + 0.10000000
                 pygame.mixer.music.set_volume(new_vol)
+
+                # Update the song info and redraw
+                i_lines[4] = (update_song_info(), True)
+                redraw()
 
 
 def infinite_queue(event_type):
@@ -362,54 +412,48 @@ def infinite_queue(event_type):
     global m_file
 
     while True:
-        event = pygame.event.wait()        # Waiting is better than polling
-        # for event in pygame.event.get(): # Nice way to heat your CPU!
+        
+        # When the song ends, play a new random song
+        event = pygame.event.wait()
         if event.type == event_type:
             try:
+            
+                # Get a random file, load it and play it
                 m_file = random_file(m_file)
                 pygame.mixer.music.load(m_file)
-                i_lines[0] = (strip_path_from_filename(m_file), False)
                 pygame.mixer.music.play()
+                
+                # Update title, bar and song info and redraw
+                i_lines[0] = (strip_path_from_filename(m_file), False)
+                i_lines[2] = (update_bar(), True)
+                i_lines[4] = (update_song_info(), True)
                 pause_symbol()
                 redraw()
+
             except pygame.error:
                 pass
 
 
-def progress_bar():
+def poll_interface(interval):
     """
-    Creates a progress bar that updates every second.
+    Updates the progress bar and the song time info every interval.
     The thread is blocked updating the bar until the song is finished.
+    Args:
+        interval (double): The interval in seconds between updates.
     """
-
-    global i_lines, m_file, polling_interval
-
     while True:
-        time.sleep(polling_interval)
-
-        # Load the audio file to mutagen
-        audio = mutagen.File(m_file)
-
-        # Obtain current and total times
-        curr_time = pygame.mixer.music.get_pos()
-        total_time = audio.info.length
-        curr_time = curr_time / 1000
-
-        # Calculate the percentage of the song that is played
-        percentage = curr_time / total_time
-
-        # Get the progress bar
-        progress_bar = bar(percentage, box_width)
-
-        # Insert it into the music player interface and redraw
-        i_lines[2] = (progress_bar, True)
-        i_lines[4] = (song_info_parser(curr_time, total_time, pygame.mixer.music.get_volume(), box_width), True)
+        
+        time.sleep(interval)
+        
+        # Update bar and song info and redraw
+        i_lines[2] = (update_bar(), True)
+        i_lines[4] = (update_song_info(), True)
         redraw()
 
 
 def main():
 
-    global i_lines, m_file, box_width
+    global i_lines, m_file, box_width, polling_interval
 
     # Check input arguments
     if len(sys.argv) != 2:
@@ -455,7 +499,7 @@ def main():
     th2.start()
 
     # MAIN - Dynamic progress bar
-    progress_bar()
+    poll_interface(polling_interval)
 
 
 if __name__ == "__main__":
