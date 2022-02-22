@@ -29,6 +29,6 @@ The program can now be ran from a terminal with the command `pyms`.
 ## Usage
 Execute the following command to play the song passed as argument:
 ```
-pyms <path/to/song.mp3>
+pyms path/to/song.mp3
 ```
 You can also specify a path to a directory and `pyms` will play a random file from that directory.
