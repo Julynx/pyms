@@ -4,7 +4,6 @@ pyms: A simple terminal based music player.
 """
 
 import os
-from re import T
 import sys
 import signal
 import random
