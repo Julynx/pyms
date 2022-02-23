@@ -21,7 +21,7 @@ import mutagen
 
 box_width = 46
 i_lines = [
-    ("--", True),
+    ("----", False),
     ("", True),
     ("░"*box_width, True),
     ("", True),
@@ -34,14 +34,15 @@ i_lines = [
     ("escape    pause       F8        F9      pg_dwn", True)
 ]
 
-play1 = "██▄▄  "  # i_lines[4][0][10:16]
-play2 = "██████"  # i_lines[5][0][10:16]
-play3 = "██▀▀  "  # i_lines[6][0][10:16]
+play1 = "██▄▄  "
+play2 = "██████"
+play3 = "██▀▀  "
 
 paus1 = "██  ██"
 paus2 = "██  ██"
 paus3 = "██  ██"
 
+playIdx = 6
 m_file = ""
 polling_interval = 0.5
 
@@ -99,26 +100,30 @@ def pause_symbol():
     """
     Replaces the play symbol with the pause symbol.
     """
-    line1 = i_lines[6][0][0:10] + paus1 + i_lines[6][0][16:]
-    line2 = i_lines[7][0][0:10] + paus2 + i_lines[7][0][16:]
-    line3 = i_lines[8][0][0:10] + paus3 + i_lines[8][0][16:]
+    global i_lines, playIdx
 
-    i_lines[6] = (line1, True)
-    i_lines[7] = (line2, True)
-    i_lines[8] = (line3, True)
+    line1 = i_lines[playIdx+0][0][0:10] + paus1 + i_lines[playIdx+0][0][16:]
+    line2 = i_lines[playIdx+1][0][0:10] + paus2 + i_lines[playIdx+1][0][16:]
+    line3 = i_lines[playIdx+2][0][0:10] + paus3 + i_lines[playIdx+2][0][16:]
+
+    i_lines[playIdx+0] = (line1, True)
+    i_lines[playIdx+1] = (line2, True)
+    i_lines[playIdx+2] = (line3, True)
 
 
 def play_symbol():
     """
     Replaces the pause symbol with the play symbol.
     """
-    line1 = i_lines[6][0][0:10] + play1 + i_lines[6][0][16:]
-    line2 = i_lines[7][0][0:10] + play2 + i_lines[7][0][16:]
-    line3 = i_lines[8][0][0:10] + play3 + i_lines[8][0][16:]
+    global i_lines, playIdx
 
-    i_lines[6] = (line1, True)
-    i_lines[7] = (line2, True)
-    i_lines[8] = (line3, True)
+    line1 = i_lines[playIdx+0][0][0:10] + play1 + i_lines[playIdx+0][0][16:]
+    line2 = i_lines[playIdx+1][0][0:10] + play2 + i_lines[playIdx+1][0][16:]
+    line3 = i_lines[playIdx+2][0][0:10] + play3 + i_lines[playIdx+2][0][16:]
+
+    i_lines[playIdx+0] = (line1, True)
+    i_lines[playIdx+1] = (line2, True)
+    i_lines[playIdx+2] = (line3, True)
 
 
 def strip_path_from_filename(path):
@@ -443,8 +448,9 @@ def poll_interface(interval):
     Args:
         interval (double): The interval in seconds between updates.
     """
-    while True:
+    global i_lines
 
+    while True:
         time.sleep(interval)
 
         # Update bar and song info and redraw
@@ -455,7 +461,7 @@ def poll_interface(interval):
 
 def main():
 
-    global i_lines, m_file, box_width, polling_interval
+    global i_lines, m_file, polling_interval
 
     # Check input arguments
     if len(sys.argv) != 2:
