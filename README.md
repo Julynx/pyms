@@ -2,8 +2,15 @@
 *Minimal command-line music player written in Python.*
 <br><br>
 
+<h4 align="center">Regular extended view</h4>
 <p align="center">  
   <img width="772" src="https://i.imgur.com/DlI6U2g.png">
+</p>
+<br>
+
+<h4 align="center">Interface when collapsed</h4>
+<p align="center">  
+  <img width="772" src="https://i.imgur.com/4hC3hmk.png">
 </p>
 <br>
 
