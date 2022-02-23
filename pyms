@@ -15,11 +15,13 @@ from pynput import keyboard
 with contextlib.redirect_stdout(None):
     import pygame
 import threading
+import subprocess
 import mutagen
 
 
 box_width = 46
 i_lines = [
+    ("--", True),
     ("", True),
     ("░"*box_width, True),
     ("", True),
@@ -86,7 +88,8 @@ def redraw():
     Clears the screen and redraws the ui.
     """
     sys.stdout.flush()
-    os.system("clear")
+    subprocess.call(['tput','reset'])
+    cursor.hide()
     sys.stdout.flush()
     print(interface(i_lines))
     sys.stdout.flush()
@@ -204,6 +207,9 @@ def interface(lines):
     string = "\n" * (int(height/2) - int(len(lines)/2))
     term = "..."
 
+    # Limit according to terminal height
+    lines = lines[:height-1]
+
     # Create the body
     for tupl in lines:
         line = tupl[0]
@@ -223,7 +229,7 @@ def interface(lines):
 
         # Center the final line
         formatted_line = formatted_line.center(width)
-        string += formatted_line + "\n"
+        string += formatted_line
 
     return string
 
@@ -481,7 +487,7 @@ def main():
 
     # Fancy interface magic
     cursor.hide()
-    i_lines = [(strip_path_from_filename(m_file), False)] + i_lines
+    i_lines[0] = (strip_path_from_filename(m_file), False)
     redraw()
     signal.signal(signal.SIGWINCH, resize_handler)
     signal.signal(signal.SIGINT, exit_handler)
