@@ -88,9 +88,9 @@ def redraw():
     """
     Clears the screen and redraws the ui.
     """
-    sys.stdout.flush()
     subprocess.call(['tput', 'reset'])
     cursor.hide()
+
     sys.stdout.flush()
     print(interface(i_lines))
     sys.stdout.flush()
@@ -492,7 +492,6 @@ def main():
     pygame.mixer.music.set_endevent(MUSIC_END)
 
     # Fancy interface magic
-    cursor.hide()
     i_lines[0] = (strip_path_from_filename(m_file), False)
     redraw()
     signal.signal(signal.SIGWINCH, resize_handler)
