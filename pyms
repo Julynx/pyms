@@ -288,7 +288,13 @@ def song_info_parser(current_secs, total_secs, volume, max_width):
 
 
 def update_bar():
+    """
+    Updates a song's progress bar calling the bar_parser function with the
+    current and total seconds of the song.
 
+    Returns:
+        str: Song progress bar string.
+    """
     global m_file, box_width
 
     # Load the audio file to mutagen
@@ -307,7 +313,13 @@ def update_bar():
 
 
 def update_song_info():
+    """
+    Updates a song_info string calling song_info_parser with the current
+    time and total time of the song and returning the updated string.
 
+    Returns:
+        str: Song info string.
+    """
     global m_file, box_width
 
     # Load the audio file to mutagen
