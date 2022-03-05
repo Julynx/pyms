@@ -25,9 +25,17 @@ The following commands will download the latest version of pyms from this reposi
 and install it in your `/usr/bin/` directory:
 ```
 git clone https://github.com/Julynx/pyms
+```
+```
 cd pyms
+```
+```
 pip3 install -r requirements.txt
+```
+```
 chmod +x pyms
+```
+```
 sudo mv pyms /usr/bin/
 ```
 The program can now be ran from a terminal with the command `pyms`.
