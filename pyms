@@ -19,6 +19,7 @@ import subprocess
 import mutagen
 from dataclasses import dataclass
 
+
 @dataclass
 class UI:
     polling_interval = 0.5
@@ -39,13 +40,14 @@ class UI:
         ("escape    pause       F8        F9      pg_dwn", True)
     ]
 
-    play =  ["██▄▄  ",
-             "██████",
-             "██▀▀  "]
+    play = ["██▄▄  ",
+            "██████",
+            "██▀▀  "]
 
     pause = ["██  ██",
              "██  ██",
              "██  ██"]
+
 
 @dataclass
 class Files:
@@ -82,12 +84,15 @@ def resize_handler(signum, frame):
 # --- UI functions
 def swap_symbol(symbol):
     """
-    Replaces the play symbol with the pause symbol.
+    Replaces the old symbol with the new symbol passed in as argument.
+    Args:
+        symbol (list<str>): The new symbol.
     """
     global UI
 
     for i in range(len(symbol)):
-        line = UI.box[UI.playIdx+i][0][0:10] + symbol[i] + UI.box[UI.playIdx+i][0][16:]
+        line = UI.box[UI.playIdx+i][0][0:10] + \
+            symbol[i] + UI.box[UI.playIdx+i][0][16:]
         UI.box[UI.playIdx+i] = (line, True)
 
 
@@ -104,7 +109,7 @@ def redraw():
         passed in as a list of tuples.
 
         Args:
-            lines (list): A list of tuples, each containing a line and a boolean.
+            lines (list): A list of tuples, each containing a line and a bool.
             The line is the text to be displayed, and the boolean is whether
             the line should be centered.
 
@@ -246,17 +251,15 @@ def update_song_info():
     return song_info
 
 
-def poll_interface(interval):
+def poll_interface():
     """
     Updates the progress bar and the song time info every interval.
     The thread is blocked updating the bar until the song is finished.
-    Args:
-        interval (double): The interval in seconds between updates.
     """
     global UI
 
     while True:
-        time.sleep(interval)
+        time.sleep(UI.polling_interval)
 
         # Update bar and song info and redraw
         UI.box[2] = (update_bar(), True)
@@ -354,7 +357,7 @@ def keyboard_listener():
 
             # -- Handle key presses --
             if event.key == keyboard.Key.esc:
-                signal.raise_signal( signal.SIGINT )
+                signal.raise_signal(signal.SIGINT)
 
             elif event.key == keyboard.Key.pause:
                 if pygame.mixer.music.get_busy():
@@ -460,7 +463,8 @@ def main():
     # If the path is a folder, get a random file from it
     if os.path.isdir(Files.m_file):
         try:
-            Files.m_file = Files.m_file + "/" if Files.m_file[-1] != "/" else Files.m_file
+            Files.m_file = Files.m_file + \
+                "/" if Files.m_file[-1] != "/" else Files.m_file
             Files.m_file = random_file(Files.m_file)
         except pygame.error:
             print("No music files found in the directory.")
@@ -494,7 +498,7 @@ def main():
     th2.start()
 
     # MAIN - Dynamic progress bar
-    poll_interface(UI.polling_interval)
+    poll_interface()
 
 
 if __name__ == "__main__":
