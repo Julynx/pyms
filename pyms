@@ -21,6 +21,15 @@ from dataclasses import dataclass
 
 
 @dataclass
+class Bindings:
+    exit = keyboard.Key.esc
+    pause = keyboard.Key.pause
+    volDwn = keyboard.Key.f8
+    volUp = keyboard.Key.f9
+    next = keyboard.Key.page_down
+
+
+@dataclass
 class UI:
     polling_interval = 0.5
     box_width = 46
@@ -340,7 +349,7 @@ def keyboard_listener():
     Keeps that thread blocked until a key is pressed and then
     the key is captured and handled.
     """
-    global UI, Files
+    global UI, Files, Bindings
 
     press_or_release = defaultdict(lambda: 0)
 
@@ -356,10 +365,10 @@ def keyboard_listener():
                 continue
 
             # -- Handle key presses --
-            if event.key == keyboard.Key.esc:
+            if event.key == Bindings.exit:
                 signal.raise_signal(signal.SIGINT)
 
-            elif event.key == keyboard.Key.pause:
+            elif event.key == Bindings.pause:
                 if pygame.mixer.music.get_busy():
                     pygame.mixer.music.pause()
                     swap_symbol(UI.play)
@@ -368,7 +377,7 @@ def keyboard_listener():
                     swap_symbol(UI.pause)
                 redraw()
 
-            elif event.key == keyboard.Key.f8:
+            elif event.key == Bindings.volDwn:
                 curr_vol = pygame.mixer.music.get_volume()
                 new_vol = round(round(curr_vol, 1), 8) - 0.10000000
                 pygame.mixer.music.set_volume(new_vol)
@@ -377,7 +386,7 @@ def keyboard_listener():
                 UI.box[4] = (update_song_info(), True)
                 redraw()
 
-            elif event.key == keyboard.Key.f9:
+            elif event.key == Bindings.volUp:
                 curr_vol = pygame.mixer.music.get_volume()
                 new_vol = round(round(curr_vol, 1), 8) + 0.10000000
                 pygame.mixer.music.set_volume(new_vol)
@@ -386,7 +395,7 @@ def keyboard_listener():
                 UI.box[4] = (update_song_info(), True)
                 redraw()
 
-            elif event.key == keyboard.Key.page_down:
+            elif event.key == Bindings.next:
                 try:
                     # Get a random file, load it and play it
                     Files.m_file = random_file(Files.m_file)
