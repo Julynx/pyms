@@ -195,7 +195,7 @@ def update_bar():
 
     # Obtain current and total times
     curr_time = int(pygame.mixer.music.get_pos() / 1000)
-    total_time = int(audio.info.length)
+    total_time = max(int(audio.info.length), 1)
 
     # Calculate the percentage of the song that is played
     percentage = curr_time / total_time
