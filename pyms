@@ -155,7 +155,7 @@ def redraw():
     cursor.hide()
 
     sys.stdout.flush()
-    print(interface(UI.box, UI.box_width))
+    sys.stdout.write(interface(UI.box, UI.box_width) + "\n")
     sys.stdout.flush()
 
 
