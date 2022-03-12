@@ -26,6 +26,7 @@ import mutagen
 from dataclasses import dataclass
 from functools import lru_cache
 
+
 @dataclass
 class Bindings:
     exit = keyboard.Key.esc
