@@ -2,8 +2,8 @@
 
 """
 @file     pyms
-@date     08/03/2022
-@version  1.1.0
+@date     12/03/2022
+@version  1.1.1
 @license  GNU General Public License v2.0
 @url      github.com/Julynx/pyms
 @author   Julynx
@@ -261,12 +261,14 @@ def poll_interface(poll_interval):
     global UI
 
     while True:
-        time.sleep(poll_interval)
 
         # Update bar and bar text and redraw
         UI.box[2] = (update_bar(), True)
         UI.box[4] = (update_bar_txt(), True)
         redraw()
+
+        # Sleep until the screen has to be updated again
+        time.sleep(poll_interval)
 
 
 # --- Filename and string functions
