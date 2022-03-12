@@ -37,7 +37,6 @@ class Bindings:
 
 @dataclass
 class UI:
-    polling_interval = 0.5
     box_width = 46
     playIdx = 6
 
@@ -82,18 +81,6 @@ def exit_handler(signum, frame):
     os.system("clear")
     cursor.show()
     os._exit(0)
-
-
-def resize_handler(signum, frame):
-    """
-    Executes whenever the size of the terminal is changed.
-    Calls redraw() in execution to update the screen.
-
-    Args:
-        signum (int): The signal number.
-        frame (frame): The frame.
-    """
-    redraw()
 
 
 # --- UI functions
@@ -211,13 +198,13 @@ def update_bar():
     return progress_bar
 
 
-def update_song_info():
+def update_bar_txt():
     """
     Updates a song_info string calling song_info_parser with the current
     time and total time of the song and returning the updated string.
 
     Returns:
-        str: Song info string.
+        str: bar text string.
     """
     global UI, Files
 
@@ -231,7 +218,7 @@ def update_song_info():
             volume (float): The volume of the song.
             max_width (int): The maximum width of the line.
         Returns:
-            str: A string of the song info.
+            str: A string of the bar text.
         """
         # Convert the seconds to minutes and seconds
         current_mins, current_secs = divmod(current_secs, 60)
@@ -260,13 +247,13 @@ def update_song_info():
     curr_time = int(pygame.mixer.music.get_pos() / 1000)
     total_time = int(audio.info.length)
 
-    # Call song_info_parser to get the song info
+    # Call song_info_parser to get the bar text
     song_info = song_info_parser(
         curr_time, total_time, pygame.mixer.music.get_volume(), UI.box_width)
     return song_info
 
 
-def poll_interface():
+def poll_interface(poll_interval):
     """
     Updates the progress bar and the song time info every interval.
     The thread is blocked updating the bar until the song is finished.
@@ -274,11 +261,11 @@ def poll_interface():
     global UI
 
     while True:
-        time.sleep(UI.polling_interval)
+        time.sleep(poll_interval)
 
-        # Update bar and song info and redraw
+        # Update bar and bar text and redraw
         UI.box[2] = (update_bar(), True)
-        UI.box[4] = (update_song_info(), True)
+        UI.box[4] = (update_bar_txt(), True)
         redraw()
 
 
@@ -381,25 +368,22 @@ def keyboard_listener():
                 else:
                     pygame.mixer.music.unpause()
                     swap_symbol(UI.pause)
-                redraw()
 
             elif event.key == Bindings.volDwn:
                 curr_vol = pygame.mixer.music.get_volume()
                 new_vol = round(round(curr_vol, 1), 8) - 0.10000000
                 pygame.mixer.music.set_volume(new_vol)
 
-                # Update the song info and redraw
-                UI.box[4] = (update_song_info(), True)
-                redraw()
+                # Update the bar text
+                UI.box[4] = (update_bar_txt(), True)
 
             elif event.key == Bindings.volUp:
                 curr_vol = pygame.mixer.music.get_volume()
                 new_vol = round(round(curr_vol, 1), 8) + 0.10000000
                 pygame.mixer.music.set_volume(new_vol)
 
-                # Update the song info and redraw
-                UI.box[4] = (update_song_info(), True)
-                redraw()
+                # Update the bar text
+                UI.box[4] = (update_bar_txt(), True)
 
             elif event.key == Bindings.next:
                 try:
@@ -408,12 +392,11 @@ def keyboard_listener():
                     pygame.mixer.music.load(Files.m_file)
                     pygame.mixer.music.play()
 
-                    # Update the song title, info and bar and redraw
+                    # Update the song title, info and bar
                     UI.box[0] = (strip_path_from_filename(Files.m_file), False)
                     UI.box[2] = (update_bar(), True)
-                    UI.box[4] = (update_song_info(), True)
+                    UI.box[4] = (update_bar_txt(), True)
                     swap_symbol(UI.pause)
-                    redraw()
 
                 except pygame.error:
                     # Rewind the current song if no random file is found
@@ -421,11 +404,10 @@ def keyboard_listener():
                     if not pygame.mixer.music.get_busy():
                         pygame.mixer.music.unpause()
 
-                        # Update the song info and bar and redraw
+                        # Update the bar text and bar
                         UI.box[2] = (update_bar(), True)
-                        UI.box[4] = (update_song_info(), True)
+                        UI.box[4] = (update_bar_txt(), True)
                         swap_symbol(UI.pause)
-                        redraw()
 
 
 # --- Other functions
@@ -453,12 +435,11 @@ def infinite_queue(event_type):
                 pygame.mixer.music.load(Files.m_file)
                 pygame.mixer.music.play()
 
-                # Update title, bar and song info and redraw
+                # Update title, bar and bar text
                 UI.box[0] = (strip_path_from_filename(Files.m_file), False)
                 UI.box[2] = (update_bar(), True)
-                UI.box[4] = (update_song_info(), True)
+                UI.box[4] = (update_bar_txt(), True)
                 swap_symbol(UI.pause)
-                redraw()
 
             except pygame.error:
                 pass
@@ -468,6 +449,7 @@ def infinite_queue(event_type):
 def main():
 
     global UI, Files
+    polling_interval = 1/15  # 15 fps
 
     # Check input arguments
     if len(sys.argv) != 2:
@@ -485,24 +467,25 @@ def main():
             print("No music files found in the directory.")
             exit(1)
 
+    # Set up signal handler for CTRL+C
+    signal.signal(signal.SIGINT, exit_handler)
+
     # Initialize pygame mixer
     pygame.init()
     try:
+
+        # Load song and play it
         pygame.mixer.music.load(Files.m_file)
+        UI.box[0] = (strip_path_from_filename(Files.m_file), False)
         pygame.mixer.music.play()
+
+        # Send an event when the song ends
+        MUSIC_END = pygame.USEREVENT+1
+        pygame.mixer.music.set_endevent(MUSIC_END)
+
     except pygame.error:
         print("Error: Could not load music file.")
         sys.exit(1)
-
-    # Send an event when the song ends
-    MUSIC_END = pygame.USEREVENT+1
-    pygame.mixer.music.set_endevent(MUSIC_END)
-
-    # Fancy interface magic
-    UI.box[0] = (strip_path_from_filename(Files.m_file), False)
-    redraw()
-    signal.signal(signal.SIGWINCH, resize_handler)
-    signal.signal(signal.SIGINT, exit_handler)
 
     # THRD1 - Initialize the keyboard listener
     th = threading.Thread(target=keyboard_listener)
@@ -512,8 +495,8 @@ def main():
     th2 = threading.Thread(target=infinite_queue, args=(MUSIC_END,))
     th2.start()
 
-    # MAIN - Dynamic progress bar
-    poll_interface()
+    # MAIN - Poll the screen and update it
+    poll_interface(polling_interval)
 
 
 if __name__ == "__main__":
