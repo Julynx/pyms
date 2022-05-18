@@ -47,6 +47,7 @@ Execute the following command to play the song passed as argument:
 pyms path/to/song.mp3
 ```
 You can also specify a path to a directory and `pyms` will play a random file from that directory.
+<br><br>
 
 ## TODO
 - [x] [1.1.6] Reduce polling rate to 2 fps to reduce flickering on some terminal emulators.
