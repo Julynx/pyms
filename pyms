@@ -3,9 +3,9 @@
 """
 @file     pyms
 @date     12/03/2022
-@version  1.1.5
-@change   Reduced polling rate to 1/10 of a second for
-          reduced CPU usage.
+@version  1.1.6
+@change   Interface now runs at 2 fps instead of 10 fps to
+          hopefully help reduce flickering on some terminal emulators.
 @license  GNU General Public License v2.0
 @url      github.com/Julynx/pyms
 @author   Julynx
@@ -455,7 +455,7 @@ def infinite_queue(event_type):
 def main():
 
     global UI, Files
-    polling_interval = 1/10  # 10 fps
+    polling_interval = 1/2  # 2 fps
 
     # Check input arguments
     if len(sys.argv) != 2:
