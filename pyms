@@ -3,7 +3,7 @@
 """
 @file       pyms
 @date       18/05/2022
-@version    1.1.8
+@version    1.1.9
 @changelog  Configuration via command flags is here!
             Update and run "pyms --help" to see all
             available options.
@@ -43,7 +43,7 @@ OPTION:
        -v, --version            Print version information and exit.
 '''
 
-version = "1.1.8"
+version = "1.1.9"
 
 
 @dataclass
