@@ -51,5 +51,4 @@ You can also specify a path to a directory and `pyms` will play a random file fr
 ## TODO
 
 - [x] [1.1.6] Reduce polling rate to 2 fps to reduce flickering on some terminal emulators.
-- [x] [1.1.7] Reintroduce the SIGWINCH signal handler to allow for instant UI redraws when the window is resized
-              instead of having to wait for the next redraw to take place.
+- [x] [1.1.7] Reintroduce the SIGWINCH signal handler to allow for instant UI redraws when the window is resized instead of having to wait for the next redraw to take place.
