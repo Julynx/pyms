@@ -40,14 +40,23 @@ The program can now be ran from a terminal with the command `pyms`.
 <br><br>
 
 ## Usage
-Execute the following command to play the song passed as argument:
 ```
-pyms path/to/song.mp3
+Usage: pyms [FILE] [OPTION]...  Play a specific song.
+       pyms [DIR.] [OPTION]...  Play a random song from a dir.
+
+OPTION:
+       --update-interval=<X>    Redraw the UI every X seconds.
+       --no-infinite-queue      Stop playback when the song ends.
+       --no-clear               Do not clear the screen between UI
+                                  updates. This may help prevent
+                                  flickering on some terminals.
+       -h, --help               Print this message and exit.
+       -v, --version            Print version information and exit.
 ```
-You can also specify a path to a directory and `pyms` will play a random file from that directory.
-<br><br>
+<br>
 
 ## TODO
 - [x] [1.1.6] Reduce polling rate to 2 fps to reduce flickering on some terminal emulators.
 - [x] [1.1.7] Reintroduce the SIGWINCH signal handler to allow for instant UI redraws when the window is resized instead of having to wait for the next redraw to take place.
-- [ ] [1.1.8] Implement a configuration file to store the update interval, the redraw strategy, the keybindings and other relevant options.
+- [x] [1.1.8] Implement ~~a configuration file~~ command line flags to ~~store~~ set the update interval, the redraw strategy, ~~the keybindings~~ enable / disable the infinite queue ~~and other relevant options.~~
+- [ ] [1.1.9] Configurable keybindings and maybe some other stuff.
