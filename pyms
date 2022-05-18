@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 
 """
-@file     pyms
-@date     12/03/2022
-@version  1.1.6
-@change   Interface now runs at 2 fps instead of 10 fps to
-          hopefully help reduce flickering on some terminal emulators.
-@license  GNU General Public License v2.0
-@url      github.com/Julynx/pyms
-@author   Julynx
+@file       pyms
+@date       18/05/2022
+@version    1.1.7
+@changelog  Reintroduced the SIGWINCH signal handler to allow for
+            instant UI redraws when the window is resized instead
+            of having to wait for the next redraw to take place.
+@license    GNU General Public License v2.0
+@url        github.com/Julynx/pyms
+@author     Julynx
 """
 
 import os
@@ -31,11 +32,10 @@ from functools import lru_cache
 
 @dataclass
 class Bindings:
-    exit = keyboard.Key.esc
     pause = keyboard.Key.pause
     volDwn = keyboard.Key.f8
     volUp = keyboard.Key.f9
-    next = keyboard.Key.page_down
+    next = keyboard.Key.f12
 
 
 @dataclass
@@ -43,19 +43,17 @@ class UI:
     box_width = 46
     playIdx = 6
 
-    box = [
-        ("----", False),
-        ("", True),
-        ("░"*box_width, True),
-        ("", True),
-        ("--:-- / --:--" + " "*(box_width - 25) + "Volume: 100%", True),
-        ("", True),
-        ("██████    ██  ██                ██      █ ████", True),
-        ("██████    ██  ██    ██████    ██████      ██  ", True),
-        ("██████    ██  ██                ██      ████ █", True),
-        ("", True),
-        ("escape    pause       F8        F9      pg_dwn", True)
-    ]
+    box = [("----", False),
+           ("", True),
+           ("░"*box_width, True),
+           ("", True),
+           ("--:-- / --:--" + " "*(box_width - 25) + "Volume: 100%", True),
+           ("", True),
+           ("██████    ██  ██                ██      █ ████", True),
+           ("██████    ██  ██    ██████    ██████      ██  ", True),
+           ("██████    ██  ██                ██      ████ █", True),
+           ("", True),
+           ("CTRL+C    pause       F8        F9       F12  ", True)]
 
     play = ["██▄▄  ",
             "██████",
@@ -75,6 +73,8 @@ class Files:
 def exit_handler(signum, frame):
     """
     Executes whenever the signal SIGINT is received.
+    Stops the player, clears the screen and restores
+    the cursor.
 
     Args:
         signum (int): The signal number.
@@ -84,6 +84,22 @@ def exit_handler(signum, frame):
     os.system("clear")
     cursor.show()
     os._exit(0)
+
+
+def resize_handler(signum, frame):
+    """
+    Executes whenever the signal SIGINT is received.
+    Updates and redraws the UI.
+
+    Args:
+        signum (int): The signal number.
+        frame (frame): The frame.
+    """
+    global UI
+
+    UI.box[2] = (update_bar(), True)
+    UI.box[4] = (update_bar_txt(), True)
+    redraw()
 
 
 # --- UI functions
@@ -105,8 +121,6 @@ def redraw():
     """
     Clears the screen and redraws the ui.
     """
-
-    # global UI
 
     @lru_cache
     def interface(lines, box_width):
@@ -159,7 +173,7 @@ def redraw():
     cursor.hide()
 
     sys.stdout.flush()
-    sys.stdout.write(interface(tuple(UI.box), UI.box_width))
+    print(interface(tuple(UI.box), UI.box_width))
     sys.stdout.flush()
 
 
@@ -171,7 +185,6 @@ def update_bar():
     Returns:
         str: Song progress bar string.
     """
-    # global UI, Files
 
     def bar_parser(percentage, max_width):
         """
@@ -210,7 +223,6 @@ def update_bar_txt():
     Returns:
         str: bar text string.
     """
-    # global UI, Files
 
     def song_info_parser(current_secs, total_secs, volume, max_width):
         """
@@ -348,7 +360,7 @@ def keyboard_listener():
     Keeps that thread blocked until a key is pressed and then
     the key is captured and handled.
     """
-    global UI, Files  # , Bindings
+    global UI, Files
 
     press_or_release = defaultdict(lambda: 0)
 
@@ -364,10 +376,7 @@ def keyboard_listener():
                 continue
 
             # -- Handle key presses --
-            if event.key == Bindings.exit:
-                signal.raise_signal(signal.SIGINT)
-
-            elif event.key == Bindings.pause:
+            if event.key == Bindings.pause:
                 if pygame.mixer.music.get_busy():
                     pygame.mixer.music.pause()
                     swap_symbol(UI.play)
@@ -473,13 +482,13 @@ def main():
             print("No music files found in the directory.")
             exit(1)
 
-    # Set up signal handler for CTRL+C
+    # Set up signal handlers
     signal.signal(signal.SIGINT, exit_handler)
+    signal.signal(signal.SIGWINCH, resize_handler)
 
     # Initialize pygame mixer
     pygame.init()
     try:
-
         # Load song and play it
         pygame.mixer.music.load(Files.m_file)
         UI.box[0] = (strip_path_from_filename(Files.m_file), False)
