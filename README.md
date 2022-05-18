@@ -25,8 +25,6 @@ The following commands will download the latest version of pyms from this reposi
 and install it in your `/usr/bin/` directory:
 ```
 git clone https://github.com/Julynx/pyms
-```
-```
 cd pyms
 ```
 ```
