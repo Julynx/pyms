@@ -3,10 +3,10 @@
 """
 @file       pyms
 @date       18/05/2022
-@version    1.1.7
-@changelog  Reintroduced the SIGWINCH signal handler to allow for
-            instant UI redraws when the window is resized instead
-            of having to wait for the next redraw to take place.
+@version    1.1.8
+@changelog  Configuration via command flags is here!
+            Update and run "pyms --help" to see all
+            available options.
 @license    GNU General Public License v2.0
 @url        github.com/Julynx/pyms
 @author     Julynx
@@ -16,11 +16,11 @@ import os
 import sys
 import signal
 import random
-import contextlib
 import cursor
 import time
 from collections import defaultdict
 from pynput import keyboard
+import contextlib
 with contextlib.redirect_stdout(None):
     import pygame
 import threading
@@ -28,6 +28,22 @@ import subprocess
 import mutagen
 from dataclasses import dataclass
 from functools import lru_cache
+
+help_msg = '''
+Usage: pyms [FILE] [OPTION]...  Play a specific song.
+       pyms [DIR.] [OPTION]...  Play a random song from a dir.
+
+OPTION:
+       --update-interval=<X>    Redraw the UI every X seconds.
+       --no-infinite-queue      Stop playback when the song ends.
+       --no-clear               Do not clear the screen between UI
+                                  updates. This may help prevent
+                                  flickering on some terminals.
+       -h, --help               Print this message and exit.
+       -v, --version            Print version information and exit.
+'''
+
+version = "1.1.8"
 
 
 @dataclass
@@ -40,6 +56,7 @@ class Bindings:
 
 @dataclass
 class UI:
+    no_clear = False
     box_width = 46
     playIdx = 6
 
@@ -136,7 +153,6 @@ def redraw():
         Returns:
             str: A string of the box with the lines fitted in.
         """
-
         term_size = os.get_terminal_size()
         term_width = term_size.columns
         term_height = term_size.lines
@@ -167,14 +183,17 @@ def redraw():
             formatted_line = formatted_line.center(term_width)
             string += formatted_line
 
+        if UI.no_clear:
+            string += "\n" * (int(term_height/2) - int(len(lines)/2) - 2)
+
         return string
 
-    subprocess.call(['tput', 'reset'])
+    if not UI.no_clear:
+        subprocess.call(['tput', 'reset'])
+
     cursor.hide()
 
-    sys.stdout.flush()
     print(interface(tuple(UI.box), UI.box_width))
-    sys.stdout.flush()
 
 
 def update_bar():
@@ -275,6 +294,11 @@ def poll_interface(poll_interval):
     The thread is blocked updating the bar until the song is finished.
     """
     global UI
+
+    # Clear at the beginning if the redraws are set
+    # to not clear each time. Else this is not needed.
+    if UI.no_clear:
+        os.system("clear")
 
     while True:
 
@@ -380,9 +404,11 @@ def keyboard_listener():
                 if pygame.mixer.music.get_busy():
                     pygame.mixer.music.pause()
                     swap_symbol(UI.play)
+                    redraw()
                 else:
                     pygame.mixer.music.unpause()
                     swap_symbol(UI.pause)
+                    redraw()
 
             elif event.key == Bindings.volDwn:
                 curr_vol = pygame.mixer.music.get_volume()
@@ -391,6 +417,7 @@ def keyboard_listener():
 
                 # Update the bar text
                 UI.box[4] = (update_bar_txt(), True)
+                redraw()
 
             elif event.key == Bindings.volUp:
                 curr_vol = pygame.mixer.music.get_volume()
@@ -399,6 +426,7 @@ def keyboard_listener():
 
                 # Update the bar text
                 UI.box[4] = (update_bar_txt(), True)
+                redraw()
 
             elif event.key == Bindings.next:
                 try:
@@ -412,6 +440,7 @@ def keyboard_listener():
                     UI.box[2] = (update_bar(), True)
                     UI.box[4] = (update_bar_txt(), True)
                     swap_symbol(UI.pause)
+                    redraw()
 
                 except pygame.error:
                     # Rewind the current song if no random file is found
@@ -423,6 +452,7 @@ def keyboard_listener():
                         UI.box[2] = (update_bar(), True)
                         UI.box[4] = (update_bar_txt(), True)
                         swap_symbol(UI.pause)
+                        redraw()
 
 
 # --- Other functions
@@ -443,8 +473,8 @@ def infinite_queue(event_type):
         # When the song ends, play a new random song
         event = pygame.event.wait()
         if event.type == event_type:
-            try:
 
+            try:
                 # Get a random file, load it and play it
                 Files.m_file = random_file(Files.m_file)
                 pygame.mixer.music.load(Files.m_file)
@@ -455,22 +485,105 @@ def infinite_queue(event_type):
                 UI.box[2] = (update_bar(), True)
                 UI.box[4] = (update_bar_txt(), True)
                 swap_symbol(UI.pause)
+                redraw()
 
             except pygame.error:
                 pass
+
+
+# --- Argument parsing functions
+def args(positional=[]):
+    """
+    Simple argument parser.
+
+    Example:
+    $: program joe 1234 -keep -host=127.0.0.1
+
+    dictionary = args(["username", "password"])
+
+    >> username:    joe
+    >> password:    1234
+    >> -keep:       True
+    >> -host:       127.0.0.1
+
+    Args:
+        positional (str): A list of strings for the positional arguments.
+
+    Returns:
+        dict: A dictionary containing the argument names and their values.
+    """
+    args_dict = {}
+
+    # Store positional arguments
+    tail = len(positional)
+    for i, pos_arg in enumerate(positional):
+        with contextlib.suppress(IndexError):
+            if str(sys.argv[i+1]).startswith("-"):
+                tail = i
+                break
+            value = sys.argv[i+1]
+            args_dict[pos_arg] = value
+
+    # Store flags
+    for i in range(tail+1, len(sys.argv)):
+        try:
+            value = str(sys.argv[i]).split("=")[1]
+        except IndexError:
+            value = True
+        args_dict[str(sys.argv[i]).split("=")[0]] = value
+
+    return args_dict
 
 
 # --- Main function
 def main():
 
     global UI, Files
-    polling_interval = 1/2  # 2 fps
+    update_interval = 1/2         # Default value: 2 fps
+    enable_infinite_queue = True  # Default value: True
 
-    # Check input arguments
-    if len(sys.argv) != 2:
-        print("Usage: pyms <file>")
+    ## Read input arguments ##
+    arg = args(["path"])
+
+    # No song
+    if ("path" not in arg.keys()) or arg["path"].strip() in ["--help", "-h"]:
+
+        if ('--version' in arg.keys() or '-v' in arg.keys()):
+            print(version)
+            exit(0)
+
+        print(help_msg)
+        exit(0)
+
+    try:
+        Files.m_file = arg["path"]
+    except ValueError:
+        print(help_msg)
         exit(1)
-    Files.m_file = sys.argv[1]
+
+    # Update interval specified
+    if ("--update-interval" in arg.keys()):
+        try:
+            update_interval = int(arg["--update-interval"])
+        except ValueError:
+            print(help_msg)
+            exit(1)
+
+    # Infinite queue disabled
+    if ("--no-infinite-queue" in arg.keys()):
+        try:
+            enable_infinite_queue = not bool(arg["--no-infinite-queue"])
+        except ValueError:
+            print(help_msg)
+            exit(1)
+
+    # Screen clearing between updates disabled
+    if ("--no-clear" in arg.keys()):
+        try:
+            UI.no_clear = bool(arg["--no-clear"])
+        except ValueError:
+            print(help_msg)
+            exit(1)
 
     # If the path is a folder, get a random file from it
     if os.path.isdir(Files.m_file):
@@ -507,11 +620,12 @@ def main():
     th.start()
 
     # THRD2 - Initialize the infinite queue
-    th2 = threading.Thread(target=infinite_queue, args=(MUSIC_END,))
-    th2.start()
+    if enable_infinite_queue:
+        th2 = threading.Thread(target=infinite_queue, args=(MUSIC_END,))
+        th2.start()
 
     # MAIN - Poll the screen and update it
-    poll_interface(polling_interval)
+    poll_interface(update_interval)
 
 
 if __name__ == "__main__":
