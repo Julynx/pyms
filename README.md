@@ -47,7 +47,7 @@ OPTION:
 ```
 <br>
 
-## TODO
+## Changelog
 - [x] [1.1.7] Reduce polling rate to 2 fps to reduce flickering on some terminal emulators.
 - [x] [1.1.8] Reintroduce the SIGWINCH signal handler to allow for instant UI redraws when the window is resized instead of having to wait for the next redraw to take place.
 - [x] [1.1.9] Implement ~~a configuration file~~ command line flags to ~~store~~ set the update interval, the redraw strategy, ~~the keybindings~~ enable / disable the infinite queue ~~and other relevant options.~~
