@@ -33,17 +33,18 @@ The program can now be ran from a terminal with the command `pyms`.
 
 ## Usage
 ```
-Usage: pyms [FILE] [OPTION]...  Play a specific song.
-       pyms [DIR.] [OPTION]...  Play a random song from a dir.
+Usage: 
+    pyms [FILE] [OPTIONS]   Play a specific song.
+    pyms [DIR.] [OPTIONS]   Play a random song from a directory.
 
 OPTION:
-       --update-interval=<X>    Redraw the UI every X seconds.
-       --no-infinite-queue      Stop playback when the song ends.
-       --no-clear               Do not clear the screen between UI
-                                  updates. This may help prevent
-                                  flickering on some terminals.
-       -h, --help               Print this message and exit.
-       -v, --version            Print version information and exit.
+    --update-interval=<X>   Redraw the UI every X seconds.
+    --no-infinite-queue     Stop playback when the song ends.
+    --no-clear              Don't clear the screen between UI updates.
+                              This may help prevent flickering on 
+                              some terminals.
+    -h, --help              Print this message and exit.
+    -v, --version           Print version information and exit.
 ```
 <br>
 
