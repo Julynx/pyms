@@ -11,7 +11,7 @@
 ## Dependencies
 pyms uses [pygame](https://pypi.org/project/pygame/), [pynput](https://pypi.org/project/pynput/), [cursor](https://pypi.org/project/cursor/) & [mutagen](https://pypi.org/project/mutagen/), with version numbers provided in the file `requirements.txt`.
 
-It has been tested with Python 3.8.10, results may vary if other versions are used.
+It has been tested with Python 3.10.6, results may vary if other versions are used.
 <br><br>
 
 ## Installation
