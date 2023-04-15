@@ -2,11 +2,11 @@
 
 """
 @file       pyms
-@date       18/05/2022
-@version    1.1.9
-@changelog  Configuration via command flags is here!
-            Update and run "pyms --help" to see all
-            available options.
+@date       15/04/2023
+@version    1.2.0
+@changelog  - Replaced volume controls by fast-forward/backward
+            - Added dependency pygame >= 2.3.0
+            - Improved UI sprites
 @license    GNU General Public License v2.0
 @url        github.com/Julynx/pyms
 @author     Julynx
@@ -30,17 +30,18 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 help_msg = '''
-Usage: pyms [FILE] [OPTION]...  Play a specific song.
-       pyms [DIR.] [OPTION]...  Play a random song from a dir.
+Usage: 
+    pyms [FILE] [OPTIONS]   Play a specific song.
+    pyms [DIR.] [OPTIONS]   Play a random song from a directory.
 
 OPTION:
-       --update-interval=<X>    Redraw the UI every X seconds.
-       --no-infinite-queue      Stop playback when the song ends.
-       --no-clear               Do not clear the screen between UI
-                                  updates. This may help prevent
-                                  flickering on some terminals.
-       -h, --help               Print this message and exit.
-       -v, --version            Print version information and exit.
+    --update-interval=<X>   Redraw the UI every X seconds.
+    --no-infinite-queue     Stop playback when the song ends.
+    --no-clear              Don't clear the screen between UI updates.
+                              This may help prevent flickering on 
+                              some terminals.
+    -h, --help              Print this message and exit.
+    -v, --version           Print version information and exit.
 '''
 
 version = "1.1.9"
@@ -48,9 +49,9 @@ version = "1.1.9"
 
 @dataclass
 class Bindings:
-    pause = keyboard.Key.pause
-    volDwn = keyboard.Key.f8
-    volUp = keyboard.Key.f9
+    pause = keyboard.Key.f10
+    seekBwd = keyboard.Key.f8
+    seekFwd = keyboard.Key.f9
     next = keyboard.Key.f12
 
 
@@ -59,18 +60,19 @@ class UI:
     no_clear = False
     box_width = 46
     playIdx = 6
+    file_pos = 0
 
     box = [("----", False),
            ("", True),
            ("░"*box_width, True),
            ("", True),
-           ("--:-- / --:--" + " "*(box_width - 25) + "Volume: 100%", True),
+           ("--:--", True),
            ("", True),
-           ("██████    ██  ██                ██      █ ████", True),
-           ("██████    ██  ██    ██████    ██████      ██  ", True),
-           ("██████    ██  ██                ██      ████ █", True),
+           ("██████    ██  ██    █  ▄██    ██▄  █    █ ▄███", True),
+           ("██████    ██  ██    █ ████    ████ █      ██  ", True),
+           ("██████    ██  ██    █  ▀██    ██▀  █    ███▀ █", True),
            ("", True),
-           ("CTRL+C    pause       F8        F9       F12  ", True)]
+           ("CTRL+C     F10        F8        F9       F12  ", True)]
 
     play = ["██▄▄  ",
             "██████",
@@ -193,7 +195,7 @@ def redraw():
 
     cursor.hide()
 
-    print(interface(tuple(UI.box), UI.box_width))
+    print(interface(tuple(UI.box), UI.box_width), flush=True)
 
 
 def update_bar():
@@ -223,7 +225,7 @@ def update_bar():
     audio = mutagen.File(Files.m_file)
 
     # Obtain current and total times
-    curr_time = int(pygame.mixer.music.get_pos() / 1000)
+    curr_time = UI.file_pos / 1000
     total_time = max(int(audio.info.length), 1)
 
     # Calculate the percentage of the song that is played
@@ -243,14 +245,12 @@ def update_bar_txt():
         str: bar text string.
     """
 
-    def song_info_parser(current_secs, total_secs, volume, max_width):
+    def song_info_parser(current_secs, total_secs, max_width):
         """
-        Parses the current time and total time of the song,
-        as well as the volume centered in the line.
+        Parses the current time and total time of the song.
         Args:
             current_secs (int): The current seconds of the song.
             total_secs (int): The total seconds of the song.
-            volume (float): The volume of the song.
             max_width (int): The maximum width of the line.
         Returns:
             str: A string of the bar text.
@@ -259,32 +259,24 @@ def update_bar_txt():
         current_mins, current_secs = divmod(current_secs, 60)
         total_mins, total_secs = divmod(total_secs, 60)
 
-        # Convert the volume to a percentage
-        volume = int(volume * 100)
-        volume = volume + 1 if volume % 10 == 9 else volume
-
         # Format the time
         current_time = "{:02d}:{:02d}".format(current_mins, current_secs)
         total_time = "{:02d}:{:02d}".format(total_mins, total_secs)
 
-        # Format the volume
-        volume = "Volume: " + str(volume) + "%"
-
         # Format the final info string
-        line = current_time + " / " + total_time + \
-            volume.rjust(max_width - len(current_time) - len(total_time) - 3)
+        half_width = int(max_width / 2)
+        line = current_time.ljust(half_width) + total_time.rjust(half_width)
         return line
 
     # Load the audio file to mutagen
     audio = mutagen.File(Files.m_file)
 
     # Obtain current and total times
-    curr_time = int(pygame.mixer.music.get_pos() / 1000)
+    curr_time = int(UI.file_pos / 1000)
     total_time = int(audio.info.length)
 
     # Call song_info_parser to get the bar text
-    song_info = song_info_parser(
-        curr_time, total_time, pygame.mixer.music.get_volume(), UI.box_width)
+    song_info = song_info_parser(curr_time, total_time, UI.box_width)
     return song_info
 
 
@@ -309,9 +301,12 @@ def poll_interface(poll_interval):
 
         # Sleep until the screen has to be updated again
         time.sleep(poll_interval)
-
+        if pygame.mixer.music.get_busy():
+            UI.file_pos += poll_interval * 1000
 
 # --- Filename and string functions
+
+
 def strip_path_from_filename(path):
     """
     Removes the path from the filename.
@@ -410,22 +405,32 @@ def keyboard_listener():
                     swap_symbol(UI.pause)
                     redraw()
 
-            elif event.key == Bindings.volDwn:
-                curr_vol = pygame.mixer.music.get_volume()
-                new_vol = round(round(curr_vol, 1), 8) - 0.10000000
-                pygame.mixer.music.set_volume(new_vol)
+            elif event.key == Bindings.seekBwd:
+                song_length = 1000 * mutagen.File(Files.m_file).info.length
+                skip_amount = 0.025 * song_length
 
-                # Update the bar text
+                next_pos = UI.file_pos - skip_amount
+                start_pos = 0
+                UI.file_pos = max(next_pos, start_pos)
+                pygame.mixer.music.play(start=UI.file_pos/1000)
+
+                UI.box[2] = (update_bar(), True)
                 UI.box[4] = (update_bar_txt(), True)
+                swap_symbol(UI.pause)
                 redraw()
 
-            elif event.key == Bindings.volUp:
-                curr_vol = pygame.mixer.music.get_volume()
-                new_vol = round(round(curr_vol, 1), 8) + 0.10000000
-                pygame.mixer.music.set_volume(new_vol)
+            elif event.key == Bindings.seekFwd:
+                song_length = 1000 * mutagen.File(Files.m_file).info.length
+                skip_amount = 0.025 * song_length
 
-                # Update the bar text
+                next_pos = UI.file_pos + skip_amount
+                end_pos = song_length
+                UI.file_pos = min(next_pos, end_pos)
+                pygame.mixer.music.play(start=UI.file_pos/1000)
+
+                UI.box[2] = (update_bar(), True)
                 UI.box[4] = (update_bar_txt(), True)
+                swap_symbol(UI.pause)
                 redraw()
 
             elif event.key == Bindings.next:
@@ -436,6 +441,7 @@ def keyboard_listener():
                     pygame.mixer.music.play()
 
                     # Update the song title, info and bar
+                    UI.file_pos = 0
                     UI.box[0] = (strip_path_from_filename(Files.m_file), False)
                     UI.box[2] = (update_bar(), True)
                     UI.box[4] = (update_bar_txt(), True)
@@ -449,6 +455,7 @@ def keyboard_listener():
                         pygame.mixer.music.unpause()
 
                         # Update the bar text and bar
+                        UI.file_pos = 0
                         UI.box[2] = (update_bar(), True)
                         UI.box[4] = (update_bar_txt(), True)
                         swap_symbol(UI.pause)
@@ -481,6 +488,7 @@ def infinite_queue(event_type):
                 pygame.mixer.music.play()
 
                 # Update title, bar and bar text
+                UI.file_pos = 0
                 UI.box[0] = (strip_path_from_filename(Files.m_file), False)
                 UI.box[2] = (update_bar(), True)
                 UI.box[4] = (update_bar_txt(), True)
@@ -601,6 +609,7 @@ def main():
 
     # Initialize pygame mixer
     pygame.init()
+
     try:
         # Load song and play it
         pygame.mixer.music.load(Files.m_file)
