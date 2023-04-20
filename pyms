@@ -3,10 +3,9 @@
 """
 @file       pyms
 @date       15/04/2023
-@version    1.2.0
-@changelog  - Replaced volume controls by fast-forward/backward
-            - Added dependency pygame >= 2.3.0
-            - Improved UI sprites
+@version    1.2.1
+@changelog  - Infinite queue now prioritizes a new song but will select 
+              the old song if there are no other songs in the folder.
 @license    GNU General Public License v2.0
 @url        github.com/Julynx/pyms
 @author     Julynx
@@ -31,6 +30,7 @@ from functools import lru_cache
 
 help_msg = '''
 Usage: 
+    pyms [OPTIONS]          Play a random song from '~/Music'.
     pyms [FILE] [OPTIONS]   Play a specific song.
     pyms [DIR.] [OPTIONS]   Play a random song from a directory.
 
@@ -355,12 +355,10 @@ def random_file(path):
     stripped_path = strip_filename_from_path(path)
 
     # Consider only music files in the directory
+    ext = (".mp3", ".wav", ".ogg")
     files = os.listdir(stripped_path)
-    music_files = []
-    for file in files:
-        if file.endswith((".mp3", ".wav", ".ogg")):
-            if file != old_filename:
-                music_files.append(file)
+    music_files = [f for f in files if f.endswith(ext) and f != old_filename]
+    music_files += [old_filename] if len(music_files) == 0 else []
 
     try:
         # Get a random file from the directory (dont repeat the original file)
@@ -556,12 +554,20 @@ def main():
     # No song
     if ("path" not in arg.keys()) or arg["path"].strip() in ["--help", "-h"]:
 
+        if ('--help' in arg.keys() or '-h' in arg.keys()):
+            print(help_msg)
+            exit(0)
+
         if ('--version' in arg.keys() or '-v' in arg.keys()):
             print(version)
             exit(0)
 
-        print(help_msg)
-        exit(0)
+        music_dir = subprocess.run(
+            ["xdg-user-dir", "MUSIC"],
+            stdout=subprocess.PIPE
+        ).stdout.decode("utf-8").strip()
+
+        arg["path"] = os.path.expanduser(music_dir)
 
     try:
         Files.m_file = arg["path"]
