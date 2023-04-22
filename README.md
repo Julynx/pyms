@@ -53,3 +53,5 @@ OPTION:
 - [x] [1.1.8] Reintroduce the SIGWINCH signal handler to allow for instant UI redraws when the window is resized instead of having to wait for the next redraw to take place.
 - [x] [1.1.9] Implement ~~a configuration file~~ command line flags to ~~store~~ set the update interval, the redraw strategy, ~~the keybindings~~ enable / disable the infinite queue ~~and other relevant options.~~
 - [x] [1.2.0] ~~Configurable keybindings and maybe some other stuff.~~ Fast fwd/bwd buttons + improved UI sprites!
+- [x] [1.2.1] Fixed some issues with the infinite queue and folders with only one song.
+- [x] [1.2.2] Improved the error messages.
