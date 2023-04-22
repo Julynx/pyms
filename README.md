@@ -34,6 +34,7 @@ The program can now be ran from a terminal with the command `pyms`.
 ## Usage
 ```
 Usage: 
+    pyms [OPTIONS]          Play a random song from '~/Music'.
     pyms [FILE] [OPTIONS]   Play a specific song.
     pyms [DIR.] [OPTIONS]   Play a random song from a directory.
 
