@@ -2,10 +2,9 @@
 
 """
 @file       pyms
-@date       15/04/2023
-@version    1.2.1
-@changelog  - Infinite queue now prioritizes a new song but will select 
-              the old song if there are no other songs in the folder.
+@date       23/04/2023
+@version    1.2.2
+@changelog  - Improved error messages.
 @license    GNU General Public License v2.0
 @url        github.com/Julynx/pyms
 @author     Julynx
@@ -606,7 +605,7 @@ def main():
                 "/" if Files.m_file[-1] != "/" else Files.m_file
             Files.m_file = random_file(Files.m_file)
         except pygame.error:
-            print("No music files found in the directory.")
+            print(f"Error: No music files found in '{Files.m_file}'.")
             exit(1)
 
     # Set up signal handlers
@@ -627,7 +626,7 @@ def main():
         pygame.mixer.music.set_endevent(MUSIC_END)
 
     except pygame.error:
-        print("Error: Could not load music file.")
+        print(f"Error: Could not load file or directory '{Files.m_file}'.")
         sys.exit(1)
 
     # THRD1 - Initialize the keyboard listener
