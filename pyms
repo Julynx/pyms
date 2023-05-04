@@ -2,9 +2,9 @@
 
 """
 @file       pyms
-@date       23/04/2023
-@version    1.2.2
-@changelog  - Improved error messages.
+@date       04/05/2023
+@version    1.2.3
+@changelog  - Code linting.
 @license    GNU General Public License v2.0
 @url        github.com/Julynx/pyms
 @author     Julynx
@@ -14,21 +14,21 @@ import os
 import sys
 import signal
 import random
-import cursor
 import time
-from collections import defaultdict
-from pynput import keyboard
-import contextlib
-with contextlib.redirect_stdout(None):
-    import pygame
 import threading
 import subprocess
-import mutagen
+import contextlib
+from collections import defaultdict
 from dataclasses import dataclass
 from functools import lru_cache
+import cursor
+from pynput import keyboard
+with contextlib.redirect_stdout(None):
+    import pygame
+import mutagen
 
-help_msg = '''
-Usage: 
+HELP_MSG = '''
+Usage:
     pyms [OPTIONS]          Play a random song from '~/Music'.
     pyms [FILE] [OPTIONS]   Play a specific song.
     pyms [DIR.] [OPTIONS]   Play a random song from a directory.
@@ -37,13 +37,13 @@ OPTION:
     --update-interval=<X>   Redraw the UI every X seconds.
     --no-infinite-queue     Stop playback when the song ends.
     --no-clear              Don't clear the screen between UI updates.
-                              This may help prevent flickering on 
+                              This may help prevent flickering on
                               some terminals.
     -h, --help              Print this message and exit.
     -v, --version           Print version information and exit.
 '''
 
-version = "1.2.2"
+VERSION = "1.1.9"
 
 
 @dataclass
@@ -101,7 +101,7 @@ def exit_handler(signum, frame):
     pygame.mixer.music.stop()
     os.system("clear")
     cursor.show()
-    os._exit(0)
+    sys.exit(0)
 
 
 def resize_handler(signum, frame):
@@ -121,7 +121,7 @@ def resize_handler(signum, frame):
 
 
 # --- UI functions
-def swap_symbol(symbol):
+def swap_symbol(symbols):
     """
     Replaces the old symbol with the new symbol passed in as argument.
     Args:
@@ -129,9 +129,12 @@ def swap_symbol(symbol):
     """
     global UI
 
-    for i in range(len(symbol)):
-        line = UI.box[UI.playIdx+i][0][0:10] + \
-            symbol[i] + UI.box[UI.playIdx+i][0][16:]
+    for i, symbol in enumerate(symbols):
+
+        line = UI.box[UI.playIdx+i][0][0:10] \
+            + symbol \
+            + UI.box[UI.playIdx+i][0][16:]
+
         UI.box[UI.playIdx+i] = (line, True)
 
 
@@ -216,9 +219,9 @@ def update_bar():
             str: A string of the bar.
         """
         bar_width = int(percentage * max_width)
-        bar = "█" * bar_width + "░" * (max_width - bar_width)
+        bar_txt = "█" * bar_width + "░" * (max_width - bar_width)
 
-        return bar
+        return bar_txt
 
     # Load the audio file to mutagen
     audio = mutagen.File(Files.m_file)
@@ -356,17 +359,22 @@ def random_file(path):
     # Consider only music files in the directory
     ext = (".mp3", ".wav", ".ogg")
     files = os.listdir(stripped_path)
-    music_files = [f for f in files if f.endswith(ext) and f != old_filename]
+
+    music_files = [f
+                   for f
+                   in files
+                   if f.endswith(ext) and f != old_filename]
+
     music_files += [old_filename] if len(music_files) == 0 else []
 
     try:
         # Get a random file from the directory (dont repeat the original file)
-        random_file = random.choice(music_files)
-    except IndexError or ValueError:
-        raise pygame.error("No music files found in the directory.")
+        r_file = random.choice(music_files)
+    except (IndexError, ValueError) as esc:
+        raise pygame.error(f"No music files found in the directory.\n{esc}")
 
     # Return the path to the new random file
-    return os.path.join(stripped_path, random_file)
+    return os.path.join(stripped_path, r_file)
 
 
 # --- Keyboard handling functions
@@ -497,7 +505,7 @@ def infinite_queue(event_type):
 
 
 # --- Argument parsing functions
-def args(positional=[]):
+def args(positional=None):
     """
     Simple argument parser.
 
@@ -517,6 +525,8 @@ def args(positional=[]):
     Returns:
         dict: A dictionary containing the argument names and their values.
     """
+
+    positional = [] if positional is None else positional
     args_dict = {}
 
     # Store positional arguments
@@ -535,14 +545,16 @@ def args(positional=[]):
             value = str(sys.argv[i]).split("=")[1]
         except IndexError:
             value = True
-        args_dict[str(sys.argv[i]).split("=")[0]] = value
+        args_dict[str(sys.argv[i]).split("=", maxsplit=1)[0]] = value
 
     return args_dict
 
 
 # --- Main function
 def main():
-
+    """
+    Main function.
+    """
     global UI, Files
     update_interval = 1/2         # Default value: 2 fps
     enable_infinite_queue = True  # Default value: True
@@ -551,15 +563,15 @@ def main():
     arg = args(["path"])
 
     # No song
-    if ("path" not in arg.keys()) or arg["path"].strip() in ["--help", "-h"]:
+    if ("path" not in arg) or arg["path"].strip() in ["--help", "-h"]:
 
-        if ('--help' in arg.keys() or '-h' in arg.keys()):
-            print(help_msg)
-            exit(0)
+        if ('--help' in arg or '-h' in arg):
+            print(HELP_MSG)
+            sys.exit(0)
 
-        if ('--version' in arg.keys() or '-v' in arg.keys()):
-            print(version)
-            exit(0)
+        if ('--version' in arg or '-v' in arg):
+            print(VERSION)
+            sys.exit(0)
 
         music_dir = subprocess.run(
             ["xdg-user-dir", "MUSIC"],
@@ -571,32 +583,32 @@ def main():
     try:
         Files.m_file = arg["path"]
     except ValueError:
-        print(help_msg)
-        exit(1)
+        print(HELP_MSG)
+        sys.exit(1)
 
     # Update interval specified
-    if ("--update-interval" in arg.keys()):
+    if "--update-interval" in arg:
         try:
             update_interval = int(arg["--update-interval"])
         except ValueError:
-            print(help_msg)
-            exit(1)
+            print(HELP_MSG)
+            sys.exit(1)
 
     # Infinite queue disabled
-    if ("--no-infinite-queue" in arg.keys()):
+    if "--no-infinite-queue" in arg:
         try:
             enable_infinite_queue = not bool(arg["--no-infinite-queue"])
         except ValueError:
-            print(help_msg)
-            exit(1)
+            print(HELP_MSG)
+            sys.exit(1)
 
     # Screen clearing between updates disabled
-    if ("--no-clear" in arg.keys()):
+    if "--no-clear" in arg:
         try:
             UI.no_clear = bool(arg["--no-clear"])
         except ValueError:
-            print(help_msg)
-            exit(1)
+            print(HELP_MSG)
+            sys.exit(1)
 
     # If the path is a folder, get a random file from it
     if os.path.isdir(Files.m_file):
@@ -606,7 +618,7 @@ def main():
             Files.m_file = random_file(Files.m_file)
         except pygame.error:
             print(f"Error: No music files found in '{Files.m_file}'.")
-            exit(1)
+            sys.exit(1)
 
     # Set up signal handlers
     signal.signal(signal.SIGINT, exit_handler)
