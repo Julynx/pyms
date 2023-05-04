@@ -56,3 +56,4 @@ OPTION:
 - [x] [1.2.0] ~~Configurable keybindings and maybe some other stuff.~~ Fast fwd/bwd buttons + improved UI sprites!
 - [x] [1.2.1] Fixed some issues with the infinite queue and folders with only one song.
 - [x] [1.2.2] Improved the error messages.
+- [x] [1.2.3] Code linting.
