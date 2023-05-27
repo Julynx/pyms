@@ -3,8 +3,8 @@
 """
 @file       pyms
 @date       04/05/2023
-@version    1.2.3
-@changelog  - Code linting.
+@version    1.2.4
+@changelog  - CTRL+C bugfixes.
 @license    GNU General Public License v2.0
 @url        github.com/Julynx/pyms
 @author     Julynx
@@ -43,7 +43,7 @@ OPTION:
     -v, --version           Print version information and exit.
 '''
 
-VERSION = "1.1.9"
+VERSION = "1.2.4"
 
 
 @dataclass
@@ -101,7 +101,7 @@ def exit_handler(signum, frame):
     pygame.mixer.music.stop()
     os.system("clear")
     cursor.show()
-    sys.exit(0)
+    os._exit(0)
 
 
 def resize_handler(signum, frame):
