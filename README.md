@@ -57,3 +57,4 @@ OPTION:
 - [x] [1.2.1] Fixed some issues with the infinite queue and folders with only one song.
 - [x] [1.2.2] Improved the error messages.
 - [x] [1.2.3] Code linting.
+- [x] [1.2.4] Minor bugfixes related to SIGINT.
