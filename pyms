@@ -643,11 +643,13 @@ def main():
 
     # THRD1 - Initialize the keyboard listener
     th = threading.Thread(target=keyboard_listener)
+    th.daemon = True
     th.start()
 
     # THRD2 - Initialize the infinite queue
     if enable_infinite_queue:
         th2 = threading.Thread(target=infinite_queue, args=(MUSIC_END,))
+        th2.daemon = True
         th2.start()
 
     # MAIN - Poll the screen and update it
