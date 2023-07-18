@@ -357,7 +357,7 @@ def random_file(path):
     stripped_path = strip_filename_from_path(path)
 
     # Consider only music files in the directory
-    ext = (".mp3", ".wav", ".ogg")
+    ext = (".mp3", ".wav", ".ogg", ".flac")
     files = os.listdir(stripped_path)
 
     music_files = [f
