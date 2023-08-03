@@ -2,9 +2,9 @@
 
 """
 @file       pyms
-@date       27/05/2023
-@version    1.2.4
-@changelog  - CTRL+C bugfixes.
+@date       03/08/2023
+@version    1.2.5
+@changelog  - .opus format support
 @license    GNU General Public License v2.0
 @url        github.com/Julynx/pyms
 @author     Julynx
@@ -357,7 +357,7 @@ def random_file(path):
     stripped_path = strip_filename_from_path(path)
 
     # Consider only music files in the directory
-    ext = (".mp3", ".wav", ".ogg", ".flac")
+    ext = (".mp3", ".wav", ".ogg", ".flac", ".opus")
     files = os.listdir(stripped_path)
 
     music_files = [f
